@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminMobileMenu } from "./admin-mobile-menu";
 import { LogoutButton } from "./logout-button";
 
 const links = [
@@ -20,7 +21,7 @@ export function AdminShell({ children, email }: { children: React.ReactNode; ema
         <div className="admin-sidebar__footer"><span>{email}</span><LogoutButton /></div>
       </aside>
       <div className="admin-main-wrap">
-        <header className="admin-mobile-header"><div className="admin-brand"><span className="admin-brand__mark">D</span><strong>Diana & Erick</strong></div><LogoutButton /></header>
+        <header className="admin-mobile-header"><div className="admin-brand"><span className="admin-brand__mark">D</span><strong>Diana & Erick</strong></div><div className="admin-mobile-header__actions"><AdminMobileMenu email={email} /><LogoutButton /></div></header>
         <main className="admin-main">{children}</main>
       </div>
     </div>

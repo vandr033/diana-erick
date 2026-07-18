@@ -72,7 +72,7 @@ export const defaultEvents: Event[] = [
   {
     id: "event-domingo",
     slug: "domingo",
-    title: "DOMINGO",
+  title: "DOMINGO",
     subtitle: "Día de recuperación",
     date: "2027-04-11",
     startTime: null,
