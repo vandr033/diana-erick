@@ -16,6 +16,7 @@ export function AdminMobileMenu({ email }: { email?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -35,7 +36,8 @@ export function AdminMobileMenu({ email }: { email?: string }) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) toggleRef.current?.focus();
+    if (!isOpen && wasOpenRef.current) toggleRef.current?.focus();
+    wasOpenRef.current = isOpen;
   }, [isOpen]);
 
   const closeMenu = () => setIsOpen(false);
