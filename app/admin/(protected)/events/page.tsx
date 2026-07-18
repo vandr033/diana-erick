@@ -1,0 +1,4 @@
+import { EventForm } from "@/src/components/admin/event-form";
+import { getEvents } from "@/src/db/queries";
+
+export default async function EventsPage() { const events = await getEvents(); return <div className="admin-page"><div className="admin-page-heading"><div><p className="admin-eyebrow">Agenda</p><h1>Eventos</h1><p className="admin-subtitle">Edita los tres momentos del fin de semana. No se pueden agregar ni eliminar eventos.</p></div></div><div className="admin-event-list">{events.slice(0, 3).map((event) => <section className="admin-section" key={event.id}><div className="admin-section-heading"><div><p className="admin-eyebrow">{event.slug}</p><h2>{event.title}</h2></div><span className={`status-badge ${event.isActive ? "status-badge--yes" : "status-badge--no"}`}>{event.isActive ? "Activo" : "Oculto"}</span></div><EventForm event={event} /></section>)}</div></div>; }

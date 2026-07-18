@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Diana & Erick · RSVP
 
-## Getting Started
+Invitación web de una sola boda para Diana y Erick, del 9 al 11 de abril de 2027. El sitio público está en español y permite confirmar asistencia para cada día. El panel privado permite administrar respuestas, contenido, eventos, disponibilidad del RSVP y exportaciones de Excel.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 con App Router y TypeScript estricto.
+- Tailwind CSS 4 para el runtime de estilos base y CSS de diseño editorial.
+- Drizzle ORM con `@libsql/client`.
+- SQLite/libSQL local durante el desarrollo y Turso/libSQL en producción.
+- Zod, `bcryptjs`, `jose` y `xlsx`.
+
+## Requisitos
+
+- Node.js compatible con Next.js 16.
+- npm.
+- Una base Turso/libSQL para producción.
+
+## Instalación local
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Edita `.env.local`. Los valores de ejemplo no son credenciales de producción:
+
+```bash
+TURSO_DATABASE_URL="file:local.db"
+TURSO_AUTH_TOKEN=""
+AUTH_SECRET="reemplaza-con-al-menos-32-caracteres-aleatorios"
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="reemplaza-esta-contrasena"
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+```
+
+La URL `file:local.db` solo debe utilizarse durante el desarrollo. En Vercel se debe utilizar una URL `libsql://...` de Turso y su token.
+
+## Base de datos
+
+Generar una migración después de cambios de esquema:
+
+```bash
+npm run db:generate
+```
+
+Aplicar migraciones:
+
+```bash
+npm run db:migrate
+```
+
+Para una instalación local rápida también se puede usar:
+
+```bash
+npm run db:push
+```
+
+Crear o actualizar la configuración inicial, los tres eventos y el único administrador:
+
+```bash
+npm run db:seed
+```
+
+El seed usa `ADMIN_PASSWORD_HASH` si existe; de lo contrario hashea `ADMIN_PASSWORD`. Nunca imprime la contraseña. El seed es idempotente y actualiza el administrador por correo.
+
+## Desarrollo y producción
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run typecheck
+npm run build
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para producción, configura deliberadamente estas variables en Vercel:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `AUTH_SECRET` de al menos 32 caracteres
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD` o `ADMIN_PASSWORD_HASH`
+- `NEXT_PUBLIC_SITE_URL`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Después de crear la base Turso, ejecuta migraciones y seed contra esa base desde un entorno con acceso a Turso:
 
-## Learn More
+```bash
+TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run db:migrate
+TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run db:seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+No se ejecutan migraciones ni seed automáticamente en cada request de Vercel. Despliega el proyecto después de completar esas operaciones.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Rutas principales
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/` — invitación pública para personas invitadas a los tres eventos.
+- `/sabado` — invitación para personas invitadas únicamente al sábado; solo muestra el evento y RSVP del sábado.
+- `/admin/login` — acceso del administrador.
+- `/admin` — resumen y respuestas recientes.
+- `/admin/responses` — búsqueda, filtros, paginación y exportación.
+- `/admin/responses/new` — agregar respuesta manual.
+- `/admin/responses/[id]` — ver, editar o eliminar una respuesta.
+- `/admin/content` — editar textos públicos.
+- `/admin/events` — editar los tres eventos.
+- `/admin/settings` — SEO y apertura/cierre de confirmaciones.
+- `/api/admin/responses/export` — exportación protegida `.xlsx`.
 
-## Deploy on Vercel
+## Imágenes de reemplazo
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Los placeholders están en `public/images/`. Reemplaza manualmente estos archivos manteniendo exactamente el mismo nombre para conservar el layout:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `hero-flower-placeholder.png`
+- `event-friday-placeholder.png`
+- `event-saturday-placeholder.png`
+- `event-sunday-placeholder.png`
+- `gallery-01-placeholder.svg`
+- `gallery-02-placeholder.svg`
+- `gallery-03-placeholder.svg`
+
+No existe carga de imágenes desde el panel.
+
+## Exportación y modelo de respuestas
+
+El Excel incluye las hojas `RESPUESTAS` y `RESUMEN`, valores `Sí`/`No`, origen, fechas en español y respeta los filtros actuales cuando se exportan respuestas filtradas.
+
+Una fila de la base representa un envío del campo de nombre. El sistema no intenta interpretar ni separar acompañantes escritos como “Nombre + acompañante”. Se permiten nombres duplicados y envíos duplicados. No se colecta información de contacto, correo, teléfono, cantidad de invitados o estado indeciso.
+
+Las respuestas enviadas desde `/sabado` se guardan automáticamente con `attendsSaturday` según la selección del invitado y `attendsFriday = false` y `attendsSunday = false`. La regla también se aplica en el endpoint del servidor, no solo en la interfaz.
+
+## Limitaciones intencionales
+
+- No hay edición pública de una respuesta.
+- No hay correos, WhatsApp, SMS, notificaciones ni recordatorios.
+- No hay registro público, roles, múltiples administradores ni recuperación de contraseña.
+- No hay carga de imágenes ni editor HTML.
+- La fecha límite es informativa; el administrador controla manualmente si el RSVP está abierto.
+
+## Checklist de despliegue
+
+1. Crear la base de datos Turso.
+2. Configurar las variables de entorno de producción en Vercel.
+3. Ejecutar `db:migrate` contra Turso.
+4. Ejecutar `db:seed` contra Turso.
+5. Ejecutar `npm run lint`, `npm run typecheck` y `npm run build`.
+6. Reemplazar los placeholders en `public/images/` si ya están disponibles.
+7. Ingresar a `/admin/login` y comprobar el formulario, el cierre de RSVP y la exportación.

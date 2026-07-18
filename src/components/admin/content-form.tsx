@@ -1,0 +1,22 @@
+"use client";
+
+import { useState } from "react";
+import type { SiteSettings } from "@/src/db/schema";
+
+const contentFields = [
+  ["coupleNames", "Nombres de la pareja", "textarea"], ["heroDateLabel", "Etiqueta de fecha", "input"], ["heroYearLabel", "Etiqueta de año", "input"], ["invitationText", "Texto de invitación", "textarea"], ["heroButtonLabel", "Botón del inicio", "input"],
+  ["rsvpTitle", "Título de RSVP", "input"], ["fullNameLabel", "Etiqueta del nombre", "input"], ["attendancePromptLabel", "Indicación de asistencia", "input"], ["commentLabel", "Etiqueta del comentario", "input"], ["submitButtonLabel", "Botón de envío", "input"],
+  ["confirmationTitle", "Título de confirmación", "input"], ["confirmationMessage", "Mensaje de confirmación", "textarea"], ["rsvpDeadlineDate", "Fecha límite", "date"], ["deadlinePrefix", "Encabezado de fecha límite", "textarea"], ["deadlineSubtitle", "Subtítulo de fecha límite", "input"], ["footerText", "Texto del pie de página", "input"],
+] as const;
+
+export function ContentForm({ settings }: { settings: SiteSettings }) {
+  const [values, setValues] = useState(() => Object.fromEntries(contentFields.map(([key]) => [key, String(settings[key as keyof SiteSettings] ?? "")])));
+  const [message, setMessage] = useState(""); const [error, setError] = useState(""); const [isSaving, setIsSaving] = useState(false);
+  const update = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }));
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setMessage(""); setError(""); setIsSaving(true); try { const result = await fetch("/api/admin/content", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) }); const payload = await result.json() as { message?: string }; if (!result.ok) { setError(payload.message || "No fue posible guardar el contenido."); return; } setMessage("El contenido se guardó correctamente."); } catch { setError("No fue posible guardar el contenido. Intenta nuevamente."); } finally { setIsSaving(false); } };
+  return <form className="admin-form content-form" onSubmit={submit}><div className="admin-form-section"><p className="admin-eyebrow">Inicio</p><h2>La invitación</h2><div className="admin-form-grid admin-form-grid--two">{contentFields.slice(0, 5).map(([key, label, type]) => <EditableField key={key} fieldKey={key} label={label} type={type} value={values[key]} onChange={update} />)}</div></div><div className="admin-form-section"><p className="admin-eyebrow">RSVP</p><h2>La confirmación</h2><div className="admin-form-grid admin-form-grid--two">{contentFields.slice(5, 10).map(([key, label, type]) => <EditableField key={key} fieldKey={key} label={label} type={type} value={values[key]} onChange={update} />)}</div></div><div className="admin-form-section"><p className="admin-eyebrow">Cierre</p><h2>Fecha límite y pie de página</h2><div className="admin-form-grid admin-form-grid--two">{contentFields.slice(10).map(([key, label, type]) => <EditableField key={key} fieldKey={key} label={label} type={type} value={values[key]} onChange={update} />)}</div></div>{error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-success" role="status">{message}</p>}<button className="admin-button admin-button--primary" type="submit" disabled={isSaving}>{isSaving ? "Guardando…" : "Guardar contenido"}</button></form>;
+}
+
+function EditableField({ fieldKey, label, type, value, onChange }: { fieldKey: string; label: string; type: "input" | "textarea" | "date"; value: string; onChange: (key: string, value: string) => void }) {
+  return <div className="admin-field"><label htmlFor={`content-${fieldKey}`}>{label}</label>{type === "textarea" ? <textarea id={`content-${fieldKey}`} value={value} onChange={(event) => onChange(fieldKey, event.target.value)} rows={3} /> : <input id={`content-${fieldKey}`} type={type} value={value} onChange={(event) => onChange(fieldKey, event.target.value)} required />}</div>;
+}

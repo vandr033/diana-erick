@@ -1,0 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import type { Event } from "@/src/db/schema";
+
+const fields = [["title", "Título", "input"], ["subtitle", "Subtítulo", "input"], ["date", "Fecha", "date"], ["startTime", "Hora de inicio", "time"], ["endTime", "Hora de cierre", "time"], ["venueName", "Lugar", "input"], ["address", "Dirección", "input"], ["mapsUrl", "Google Maps", "url"], ["description", "Descripción", "textarea"], ["dressCodeTitle", "Título de vestimenta", "input"], ["dressCodeDescription", "Descripción de vestimenta", "textarea"], ["additionalNote", "Nota adicional", "textarea"], ["iconPath", "Ruta del ícono", "input"]] as const;
+
+export function EventForm({ event }: { event: Event }) {
+  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map(([key]) => [key, String(event[key as keyof Event] ?? "")])));
+  const [isActive, setIsActive] = useState(event.isActive); const [message, setMessage] = useState(""); const [error, setError] = useState(""); const [isSaving, setIsSaving] = useState(false);
+  const update = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }));
+  const submit = async (submitEvent: React.FormEvent<HTMLFormElement>) => { submitEvent.preventDefault(); setMessage(""); setError(""); setIsSaving(true); try { const result = await fetch(`/api/admin/events/${event.slug}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, isActive }) }); const payload = await result.json() as { message?: string }; if (!result.ok) { setError(payload.message || "No fue posible guardar el evento."); return; } setMessage("El evento se guardó correctamente."); } catch { setError("No fue posible guardar el evento. Intenta nuevamente."); } finally { setIsSaving(false); } };
+  return <form className="admin-form event-form" onSubmit={submit}><div className="admin-form-grid admin-form-grid--two">{fields.map(([key, label, type]) => <div className="admin-field" key={key}><label htmlFor={`${event.slug}-${key}`}>{label}</label>{type === "textarea" ? <textarea id={`${event.slug}-${key}`} value={values[key]} onChange={(e) => update(key, e.target.value)} rows={3} /> : <input id={`${event.slug}-${key}`} type={type} value={values[key]} onChange={(e) => update(key, e.target.value)} required={key === "title" || key === "subtitle" || key === "date"} />}</div>)}</div><label className="admin-toggle"><input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} /><span>Mostrar este evento en la invitación</span></label>{error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-success" role="status">{message}</p>}<button className="admin-button admin-button--primary" type="submit" disabled={isSaving}>{isSaving ? "Guardando…" : "Guardar evento"}</button></form>;
+}
