@@ -7,7 +7,13 @@ export function DeadlineSection({ settings }: { settings: SiteSettings }) {
   return (
     <section id="fecha-limite" className="deadline-section" aria-labelledby="deadline-title">
       <div className="deadline-gallery" aria-label="Imágenes decorativas">
-        {([1, 2, 3] as const).map((index) => <Image key={index} src={`/images/gallery-0${index}-placeholder.svg`} alt="" width={150} height={190} />)}
+        <Image
+          src="/images/footer-gallery-cutout.png"
+          alt="Diana y Erick en tres fotografías enmarcadas"
+          width={1448}
+          height={892}
+          sizes="(max-width: 640px) calc(100vw - 48px), 38vw"
+        />
       </div>
       <div className="deadline-copy">
         <div className="deadline-rule" />

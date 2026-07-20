@@ -4,7 +4,15 @@ import { useRef } from "react";
 import type { Event as WeddingEvent } from "@/src/db/schema";
 import { formatLongDate } from "@/src/lib/dates";
 
-export function EventDetailsDialog({ event }: { event: WeddingEvent }) {
+type EventDetailsDialogProps = {
+  event: WeddingEvent;
+  triggerLabel?: string;
+};
+
+export function EventDetailsDialog({
+  event,
+  triggerLabel = "Ver detalles",
+}: EventDetailsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -17,7 +25,7 @@ export function EventDetailsDialog({ event }: { event: WeddingEvent }) {
   return (
     <>
       <button className="event-details-trigger" type="button" onClick={open}>
-        Ver detalles
+        {triggerLabel}
       </button>
       <dialog ref={dialogRef} className="event-dialog" aria-labelledby={`dialog-title-${event.slug}`}>
         <div className="event-dialog__inner">
