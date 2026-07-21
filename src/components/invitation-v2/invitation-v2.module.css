@@ -289,7 +289,7 @@
 
 .closedSeal {
   top: 50%;
-  width: clamp(74px, 20vw, 86px);
+  width: clamp(86px, 24vw, 102px);
 }
 
 .openSeal {

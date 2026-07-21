@@ -39,7 +39,7 @@ function WaxSeal({ open = false }: { open?: boolean }) {
         src="/images/D-E-Stamp-cutout.png"
         alt=""
         fill
-        sizes={open ? "68px" : "86px"}
+        sizes={open ? "68px" : "102px"}
         className={styles.sealImage}
         draggable={false}
         priority
