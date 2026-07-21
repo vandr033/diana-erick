@@ -30,7 +30,12 @@ export const metadata: Metadata = {
     locale: "es_BO",
     type: "website",
   },
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: {
+      url: "/images/footer-gallery-cutout.png",
+      type: "image/png",
+    },
+  },
 };
 
 export default function RootLayout({
