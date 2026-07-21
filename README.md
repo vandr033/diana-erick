@@ -106,27 +106,19 @@ No se ejecutan migraciones ni seed automáticamente en cada request de Vercel. D
 - `/admin/settings` — SEO y apertura/cierre de confirmaciones.
 - `/api/admin/responses/export` — exportación protegida `.xlsx`.
 
-## Imágenes de reemplazo
+## Imágenes
 
-Los placeholders están en `public/images/`. Reemplaza manualmente estos archivos manteniendo exactamente el mismo nombre para conservar el layout:
-
-- `hero-flower-placeholder.png`
-- `event-friday-placeholder.png`
-- `event-saturday-placeholder.png`
-- `event-sunday-placeholder.png`
-- `gallery-01-placeholder.svg`
-- `gallery-02-placeholder.svg`
-- `gallery-03-placeholder.svg`
+Las imágenes activas están en `public/images/`. Los originales y variantes que no usa la aplicación están archivados en `public/images/unused/` para mantenerlos disponibles sin mezclarlos con los assets de producción.
 
 No existe carga de imágenes desde el panel.
 
 ## Exportación y modelo de respuestas
 
-El Excel incluye las hojas `RESPUESTAS` y `RESUMEN`, valores `Sí`/`No`, origen, fechas en español y respeta los filtros actuales cuando se exportan respuestas filtradas.
+El Excel incluye las hojas `RESPUESTAS` y `RESUMEN`, valores `Sí`/`No`/`Tal vez`, origen, fechas en español y respeta los filtros actuales cuando se exportan respuestas filtradas.
 
 Una fila de la base representa un envío del campo de nombre. El sistema no intenta interpretar ni separar acompañantes escritos como “Nombre + acompañante”. Se permiten nombres duplicados y envíos duplicados. No se colecta información de contacto, correo, teléfono, cantidad de invitados o estado indeciso.
 
-Las respuestas enviadas desde `/sabado` se guardan automáticamente con `attendsSaturday` según la selección del invitado y `attendsFriday = false` y `attendsSunday = false`. La regla también se aplica en el endpoint del servidor, no solo en la interfaz.
+Las respuestas enviadas desde `/sabado` se guardan automáticamente con `attendsSaturday` según la selección del invitado y `attendsFriday = "no"` y `attendsSunday = "no"`. La regla también se aplica en el endpoint del servidor, no solo en la interfaz.
 
 ## Limitaciones intencionales
 

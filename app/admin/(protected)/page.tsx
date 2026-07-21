@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { getDashboardStats } from "@/src/db/queries";
 import { formatDateTime } from "@/src/lib/dates";
+import type { Attendance } from "@/src/db/schema";
 
 const cards = [
   ["total", "Total de respuestas"],
@@ -10,8 +12,11 @@ const cards = [
   ["none", "No asisten a ningún evento"],
 ] as const;
 
-function AttendanceSummary({ row }: { row: { attendsFriday: boolean; attendsSaturday: boolean; attendsSunday: boolean } }) {
-  return <div className="admin-attendance-summary"><span className={row.attendsFriday ? "is-yes" : "is-no"}>V {row.attendsFriday ? "Sí" : "No"}</span><span className={row.attendsSaturday ? "is-yes" : "is-no"}>S {row.attendsSaturday ? "Sí" : "No"}</span><span className={row.attendsSunday ? "is-yes" : "is-no"}>D {row.attendsSunday ? "Sí" : "No"}</span></div>;
+const attendanceShortLabel: Record<Attendance, string> = { yes: "Sí", maybe: "Tal", no: "No" };
+
+function AttendanceSummary({ row }: { row: { attendsFriday: Attendance; attendsSaturday: Attendance; attendsSunday: Attendance } }) {
+  const item = (day: string, value: Attendance) => <span className={`is-${value}`} key={day}>{day} {attendanceShortLabel[value]}</span>;
+  return <div className="admin-attendance-summary">{item("V", row.attendsFriday)}{item("S", row.attendsSaturday)}{item("D", row.attendsSunday)}</div>;
 }
 
 export default async function AdminDashboardPage() {
@@ -28,4 +33,3 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
-import Link from "next/link";

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { InvitationPage } from "@/src/components/public/invitation-page";
+import { InvitationV2Page } from "@/src/components/invitation-v2/invitation-page";
 
 export const dynamic = "force-dynamic";
 
@@ -8,4 +8,4 @@ export const metadata: Metadata = {
   description: "Confirma tu asistencia a la celebración del sábado de Diana y Erick.",
 };
 
-export default function SaturdayInvitationPage() { return <InvitationPage saturdayOnly />; }
+export default function SaturdayInvitationPage() { return <InvitationV2Page saturdayOnly />; }

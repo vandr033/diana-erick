@@ -19,9 +19,9 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
     }
     const now = new Date();
     const attendance = {
-      attendsFriday: scope === "saturday" ? false : parsed.data.attendsFriday,
+      attendsFriday: scope === "saturday" ? "no" as const : parsed.data.attendsFriday,
       attendsSaturday: parsed.data.attendsSaturday,
-      attendsSunday: scope === "saturday" ? false : parsed.data.attendsSunday,
+      attendsSunday: scope === "saturday" ? "no" as const : parsed.data.attendsSunday,
     };
     const comment = parsed.data.comment?.trim() || null;
     await db.insert(rsvpResponses).values({ id: newId(), fullName: parsed.data.fullName, ...attendance, comment, source: "public", submittedAt: now, updatedAt: now });

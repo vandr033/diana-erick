@@ -50,6 +50,8 @@ export const siteSettings = sqliteTable("site_settings", {
   updatedAt: timestamp("updated_at"),
 });
 
+export const attendanceValues = ["yes", "no", "maybe"] as const;
+
 export const events = sqliteTable(
   "events",
   {
@@ -81,9 +83,9 @@ export const rsvpResponses = sqliteTable(
   {
     id: text("id").primaryKey(),
     fullName: text("full_name").notNull(),
-    attendsFriday: integer("attends_friday", { mode: "boolean" }).notNull(),
-    attendsSaturday: integer("attends_saturday", { mode: "boolean" }).notNull(),
-    attendsSunday: integer("attends_sunday", { mode: "boolean" }).notNull(),
+    attendsFriday: text("attends_friday", { enum: attendanceValues }).notNull(),
+    attendsSaturday: text("attends_saturday", { enum: attendanceValues }).notNull(),
+    attendsSunday: text("attends_sunday", { enum: attendanceValues }).notNull(),
     comment: text("comment"),
     source: text("source", { enum: ["public", "admin"] }).notNull().default("public"),
     submittedAt: timestamp("submitted_at"),
@@ -101,3 +103,4 @@ export const rsvpResponses = sqliteTable(
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type Event = typeof events.$inferSelect;
 export type RsvpResponse = typeof rsvpResponses.$inferSelect;
+export type Attendance = (typeof attendanceValues)[number];

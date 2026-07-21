@@ -1,5 +1,11 @@
-import { InvitationPage } from "@/src/components/public/invitation-page";
+import type { Metadata } from "next";
+import { InvitationV2Page } from "@/src/components/invitation-v2/invitation-page";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() { return <InvitationPage />; }
+export const metadata: Metadata = {
+  title: "Diana & Erick — Invitación",
+  robots: { index: false, follow: false },
+};
+
+export default function Home() { return <InvitationV2Page />; }

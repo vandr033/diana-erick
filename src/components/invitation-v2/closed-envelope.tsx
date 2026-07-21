@@ -7,7 +7,6 @@ import type {
 } from "react";
 import type { WeddingInvitationContent } from "./invitation-content";
 import type { InvitationState } from "./invitation-types";
-import { BotanicalDecoration } from "./botanical-decoration";
 import { InvitationCard } from "./invitation-card";
 import styles from "./invitation-v2.module.css";
 
@@ -62,11 +61,18 @@ export function ClosedEnvelope({
   const isOpened = state === "opened";
 
   return (
-    <section className={styles.invitationStage}>
+    <section id="inicio" className={styles.invitationStage}>
       <header className={styles.closedHeader} aria-hidden={state !== "closed"}>
-        <span>9–11 abril</span>
-        <BotanicalDecoration className={styles.closedFlower} />
-        <span>2027</span>
+        <span>{content.headerDate}</span>
+        <Image
+          src="/images/hero-flower-placeholder.png"
+          alt=""
+          width={279}
+          height={164}
+          className={styles.closedFlowerImage}
+          priority
+        />
+        <span>{content.headerYear}</span>
       </header>
 
       <div
@@ -117,7 +123,7 @@ export function ClosedEnvelope({
         <span className={styles.recipientDetails} aria-hidden="true">
           <span>Para: Nuestro invitado</span>
           <span className={styles.recipientDivider} />
-          <span>9–11 abril 2027</span>
+          <span>{content.formattedDateRange}</span>
         </span>
 
         <button

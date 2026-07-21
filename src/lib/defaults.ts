@@ -42,7 +42,7 @@ export const defaultEvents: Event[] = [
     dressCodeTitle: "DRESS CODE:",
     dressCodeDescription: "CÓMODO Y COLORIDO",
     additionalNote: null,
-    iconPath: "/images/event-friday-placeholder.png",
+    iconPath: "/images/event-friday-transparent-final.png",
     sortOrder: 1,
     isActive: true,
     createdAt: new Date(0),

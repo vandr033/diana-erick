@@ -17,7 +17,7 @@ export async function InvitationPage({ saturdayOnly = false }: { saturdayOnly?: 
       <HeroSection settings={settings} />
       <ItinerarySection events={events} />
       <RsvpSection settings={settings} events={events} saturdayOnly={saturdayOnly} />
-      <DeadlineSection settings={settings} />
+      <DeadlineSection settings={settings} targetEvent={visibleEvents[0]} />
       <PublicFooter settings={settings} />
     </main>
   );

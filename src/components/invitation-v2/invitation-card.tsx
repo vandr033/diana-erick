@@ -1,6 +1,6 @@
 import type { Ref } from "react";
+import Image from "next/image";
 import type { WeddingInvitationContent } from "./invitation-content";
-import { BotanicalDecoration } from "./botanical-decoration";
 import styles from "./invitation-v2.module.css";
 
 type InvitationCardProps = {
@@ -30,7 +30,14 @@ export function InvitationCard({
 
   return (
     <div className={styles.cardContents}>
-      <BotanicalDecoration className={styles.cardBotanical} />
+      <Image
+        src="/images/hero-flower-placeholder.png"
+        alt=""
+        width={279}
+        height={164}
+        className={styles.cardBotanicalImage}
+        priority
+      />
       {interactive ? (
         <h1
           ref={headingRef}
@@ -61,11 +68,11 @@ export function InvitationCard({
           className={styles.discoverButton}
           onClick={onDiscover}
         >
-          Descubrir el fin de semana
+          {content.discoverLabel}
         </button>
       ) : (
         <span className={styles.previewAction} aria-hidden="true">
-          Descubrir el fin de semana
+          {content.discoverLabel}
         </span>
       )}
     </div>

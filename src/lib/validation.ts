@@ -1,13 +1,14 @@
 import { z } from "zod";
+import { attendanceValues } from "@/src/db/schema";
 
 const requiredText = (message: string, max = 500) =>
   z.string().trim().min(1, message).max(max, `No puede superar los ${max} caracteres.`);
 
 export const rsvpSchema = z.object({
   fullName: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(150, "El nombre no puede superar los 150 caracteres."),
-  attendsFriday: z.boolean({ message: "Selecciona una respuesta para el viernes." }),
-  attendsSaturday: z.boolean({ message: "Selecciona una respuesta para el sábado." }),
-  attendsSunday: z.boolean({ message: "Selecciona una respuesta para el domingo." }),
+  attendsFriday: z.enum(attendanceValues, { message: "Selecciona una respuesta para el viernes." }),
+  attendsSaturday: z.enum(attendanceValues, { message: "Selecciona una respuesta para el sábado." }),
+  attendsSunday: z.enum(attendanceValues, { message: "Selecciona una respuesta para el domingo." }),
   comment: z.string().trim().max(1000, "El comentario no puede superar los 1.000 caracteres.").nullable().optional(),
   honeypot: z.string().optional(),
 });

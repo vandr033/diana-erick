@@ -2,19 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { RsvpResponse } from "@/src/db/schema";
+import type { Attendance, RsvpResponse } from "@/src/db/schema";
 
-type Values = { fullName: string; attendsFriday: string; attendsSaturday: string; attendsSunday: string; comment: string };
+type Values = { fullName: string; attendsFriday: Attendance; attendsSaturday: Attendance; attendsSunday: Attendance; comment: string };
 const fromResponse = (response?: RsvpResponse): Values => ({
   fullName: response?.fullName || "",
-  attendsFriday: response ? String(response.attendsFriday) : "true",
-  attendsSaturday: response ? String(response.attendsSaturday) : "true",
-  attendsSunday: response ? String(response.attendsSunday) : "true",
+  attendsFriday: response?.attendsFriday || "yes",
+  attendsSaturday: response?.attendsSaturday || "yes",
+  attendsSunday: response?.attendsSunday || "yes",
   comment: response?.comment || "",
 });
 
-function AttendanceChoice({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <fieldset className="admin-attendance-field"><legend>{label}</legend><div className="admin-choice-row"><label className={value === "true" ? "is-selected" : ""}><input type="radio" checked={value === "true"} onChange={() => onChange("true")} /> Sí asistiré</label><label className={value === "false" ? "is-selected" : ""}><input type="radio" checked={value === "false"} onChange={() => onChange("false")} /> No asistiré</label></div></fieldset>;
+const choices: { value: Attendance; label: string }[] = [
+  { value: "yes", label: "Sí asistiré" },
+  { value: "maybe", label: "Tal vez" },
+  { value: "no", label: "No asistiré" },
+];
+
+function AttendanceChoice({ label, value, onChange }: { label: string; value: Attendance; onChange: (value: Attendance) => void }) {
+  return <fieldset className="admin-attendance-field"><legend>{label}</legend><div className="admin-choice-row">{choices.map((choice) => <label className={value === choice.value ? "is-selected" : ""} key={choice.value}><input type="radio" checked={value === choice.value} onChange={() => onChange(choice.value)} /> {choice.label}</label>)}</div></fieldset>;
 }
 
 export function ResponseForm({ response, mode = "edit" }: { response?: RsvpResponse; mode?: "new" | "edit" }) {
@@ -22,13 +28,13 @@ export function ResponseForm({ response, mode = "edit" }: { response?: RsvpRespo
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const update = (key: keyof Values, value: string) => setValues((current) => ({ ...current, [key]: value }));
+  const update = <Key extends keyof Values>(key: Key, value: Values[Key]) => setValues((current) => ({ ...current, [key]: value }));
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setError(""); setMessage(""); setIsSaving(true);
     const endpoint = mode === "new" ? "/api/admin/responses" : `/api/admin/responses/${response?.id}`;
     try {
-      const result = await fetch(endpoint, { method: mode === "new" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, attendsFriday: values.attendsFriday === "true", attendsSaturday: values.attendsSaturday === "true", attendsSunday: values.attendsSunday === "true", source: "admin" }) });
+      const result = await fetch(endpoint, { method: mode === "new" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, source: "admin" }) });
       const payload = await result.json() as { message?: string; id?: string };
       if (!result.ok) { setError(payload.message || "No fue posible guardar la respuesta."); return; }
       setMessage(mode === "new" ? "La respuesta se agregó correctamente." : "La respuesta se guardó correctamente.");

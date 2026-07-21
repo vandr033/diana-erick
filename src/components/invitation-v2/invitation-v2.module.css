@@ -59,20 +59,12 @@
   text-align: left;
 }
 
-.closedFlower {
+.closedFlowerImage {
   width: 54px;
   height: 66px;
-  color: var(--olive-dark);
-  opacity: 0.82;
-}
-
-.closedFlower path,
-.cardBotanical path {
-  stroke: currentColor;
-  stroke-width: 1.05;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
+  object-fit: contain;
+  opacity: 0.88;
+  filter: brightness(0) saturate(100%) invert(41%) sepia(20%) saturate(902%) hue-rotate(34deg) brightness(86%) contrast(86%);
 }
 
 .scene {
@@ -466,13 +458,14 @@
   text-align: center;
 }
 
-.cardBotanical {
+.cardBotanicalImage {
   flex: 0 0 auto;
   width: clamp(72px, 21%, 106px);
   height: auto;
   margin-bottom: clamp(10px, 2.2%, 17px);
-  color: var(--olive-dark);
-  opacity: 0.72;
+  object-fit: contain;
+  opacity: 0.84;
+  filter: brightness(0) saturate(100%) invert(41%) sepia(20%) saturate(902%) hue-rotate(34deg) brightness(86%) contrast(86%);
 }
 
 .coupleNames {
@@ -797,7 +790,7 @@
     grid-template-columns: 1fr 62px 1fr;
   }
 
-  .closedFlower {
+  .closedFlowerImage {
     width: 62px;
     height: 74px;
   }
@@ -840,7 +833,7 @@
     gap: 10px;
   }
 
-  .closedFlower {
+  .closedFlowerImage {
     width: 46px;
     height: 58px;
   }

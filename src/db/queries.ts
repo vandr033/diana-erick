@@ -41,10 +41,10 @@ export function responseFilterConditions(filters: {
     conditions.push(sql`lower(${rsvpResponses.fullName}) like ${term}`);
   }
   const eventColumn = filters.event === "viernes" ? rsvpResponses.attendsFriday : filters.event === "sabado" ? rsvpResponses.attendsSaturday : filters.event === "domingo" ? rsvpResponses.attendsSunday : null;
-  if (eventColumn) conditions.push(eq(eventColumn, filters.attendance !== "no"));
+  const attendance = filters.attendance === "si" ? "yes" : filters.attendance === "no" ? "no" : filters.attendance === "tal-vez" ? "maybe" : null;
+  if (eventColumn && attendance) conditions.push(eq(eventColumn, attendance));
   if (filters.attendance && !eventColumn) {
-    const attending = filters.attendance !== "no";
-    conditions.push(or(eq(rsvpResponses.attendsFriday, attending), eq(rsvpResponses.attendsSaturday, attending), eq(rsvpResponses.attendsSunday, attending)));
+    if (attendance) conditions.push(or(eq(rsvpResponses.attendsFriday, attendance), eq(rsvpResponses.attendsSaturday, attendance), eq(rsvpResponses.attendsSunday, attendance)));
   }
   if (filters.dateFrom) conditions.push(gte(rsvpResponses.submittedAt, new Date(`${filters.dateFrom}T00:00:00-04:00`)));
   if (filters.dateTo) conditions.push(lte(rsvpResponses.submittedAt, new Date(`${filters.dateTo}T23:59:59-04:00`)));
@@ -70,11 +70,11 @@ export async function getDashboardStats() {
     const rows = await db.select().from(rsvpResponses).orderBy(desc(rsvpResponses.submittedAt));
     return {
       total: rows.length,
-      confirmations: rows.filter((row) => row.attendsFriday || row.attendsSaturday || row.attendsSunday).length,
-      friday: rows.filter((row) => row.attendsFriday).length,
-      saturday: rows.filter((row) => row.attendsSaturday).length,
-      sunday: rows.filter((row) => row.attendsSunday).length,
-      none: rows.filter((row) => !row.attendsFriday && !row.attendsSaturday && !row.attendsSunday).length,
+      confirmations: rows.filter((row) => row.attendsFriday === "yes" || row.attendsSaturday === "yes" || row.attendsSunday === "yes").length,
+      friday: rows.filter((row) => row.attendsFriday === "yes").length,
+      saturday: rows.filter((row) => row.attendsSaturday === "yes").length,
+      sunday: rows.filter((row) => row.attendsSunday === "yes").length,
+      none: rows.filter((row) => row.attendsFriday === "no" && row.attendsSaturday === "no" && row.attendsSunday === "no").length,
       recent: rows.slice(0, 10),
     };
   } catch {

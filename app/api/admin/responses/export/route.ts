@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import { and, desc } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { responseFilterConditions } from "@/src/db/queries";
-import { rsvpResponses } from "@/src/db/schema";
+import { rsvpResponses, type Attendance } from "@/src/db/schema";
 import { requireAdminApi } from "@/src/lib/auth";
 import { formatDateTime } from "@/src/lib/dates";
 
@@ -16,19 +16,22 @@ export async function GET(request: Request) {
     const filters = { q: url.searchParams.get("q") || "", event: url.searchParams.get("event") || "", attendance: url.searchParams.get("attendance") || "", dateFrom: url.searchParams.get("dateFrom") || "", dateTo: url.searchParams.get("dateTo") || "" };
     const conditions = responseFilterConditions(filters);
     const rows = await db.select().from(rsvpResponses).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(rsvpResponses.submittedAt));
-    const yes = (value: boolean) => value ? "Sí" : "No";
-    const responseRows = rows.map((row) => ({ "Nombre completo": row.fullName, "Viernes 9 de abril": yes(row.attendsFriday), "Sábado 10 de abril": yes(row.attendsSaturday), "Domingo 11 de abril": yes(row.attendsSunday), "Comentario": row.comment || "", "Fecha de respuesta": formatDateTime(row.submittedAt), "Última actualización": formatDateTime(row.updatedAt), "Origen": row.source === "admin" ? "Administrador" : "Invitado" }));
-    const confirmations = rows.filter((row) => row.attendsFriday || row.attendsSaturday || row.attendsSunday).length;
+    const attendanceLabel: Record<Attendance, string> = { yes: "Sí", maybe: "Tal vez", no: "No" };
+    const responseRows = rows.map((row) => ({ "Nombre completo": row.fullName, "Viernes 9 de abril": attendanceLabel[row.attendsFriday], "Sábado 10 de abril": attendanceLabel[row.attendsSaturday], "Domingo 11 de abril": attendanceLabel[row.attendsSunday], "Comentario": row.comment || "", "Fecha de respuesta": formatDateTime(row.submittedAt), "Última actualización": formatDateTime(row.updatedAt), "Origen": row.source === "admin" ? "Administrador" : "Invitado" }));
+    const confirmations = rows.filter((row) => row.attendsFriday === "yes" || row.attendsSaturday === "yes" || row.attendsSunday === "yes").length;
     const summaryRows = [
       { Métrica: "Total de respuestas", Valor: rows.length },
       { Métrica: "Confirmaciones", Valor: confirmations },
-      { Métrica: "No asisten a ningún evento", Valor: rows.filter((row) => !row.attendsFriday && !row.attendsSaturday && !row.attendsSunday).length },
-      { Métrica: "Asisten el viernes", Valor: rows.filter((row) => row.attendsFriday).length },
-      { Métrica: "No asisten el viernes", Valor: rows.filter((row) => !row.attendsFriday).length },
-      { Métrica: "Asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday).length },
-      { Métrica: "No asisten el sábado", Valor: rows.filter((row) => !row.attendsSaturday).length },
-      { Métrica: "Asisten el domingo", Valor: rows.filter((row) => row.attendsSunday).length },
-      { Métrica: "No asisten el domingo", Valor: rows.filter((row) => !row.attendsSunday).length },
+      { Métrica: "No asisten a ningún evento", Valor: rows.filter((row) => row.attendsFriday === "no" && row.attendsSaturday === "no" && row.attendsSunday === "no").length },
+      { Métrica: "Asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "yes").length },
+      { Métrica: "Tal vez asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "maybe").length },
+      { Métrica: "No asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "no").length },
+      { Métrica: "Asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "yes").length },
+      { Métrica: "Tal vez asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "maybe").length },
+      { Métrica: "No asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "no").length },
+      { Métrica: "Asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "yes").length },
+      { Métrica: "Tal vez asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "maybe").length },
+      { Métrica: "No asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "no").length },
       { Métrica: "Fecha de generación", Valor: formatDateTime(new Date()) },
       { Métrica: "Filtros aplicados", Valor: Object.values(filters).some(Boolean) ? "Sí" : "No" },
     ];

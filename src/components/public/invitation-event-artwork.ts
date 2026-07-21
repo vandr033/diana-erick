@@ -3,7 +3,7 @@ import type { Event } from "@/src/db/schema";
 export function withInvitationEventArtwork(events: Event[]): Event[] {
   return events.map((event) => {
     if (event.slug === "viernes") {
-      return { ...event, iconPath: "/images/event-friday-transparent.png" };
+      return { ...event, iconPath: "/images/event-friday-transparent-final.png" };
     }
 
     if (event.slug === "domingo") {

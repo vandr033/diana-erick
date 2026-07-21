@@ -1,40 +1,50 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Event, SiteSettings } from "@/src/db/schema";
+import type { Attendance, Event, SiteSettings } from "@/src/db/schema";
 
 type Confirmation = {
   fullName: string;
-  attendsFriday: boolean;
-  attendsSaturday: boolean;
-  attendsSunday: boolean;
+  attendsFriday: Attendance;
+  attendsSaturday: Attendance;
+  attendsSunday: Attendance;
   comment: string | null;
 };
 
 type FormValues = {
   fullName: string;
-  attendsFriday: string;
-  attendsSaturday: string;
-  attendsSunday: string;
+  attendsFriday: Attendance | "";
+  attendsSaturday: Attendance | "";
+  attendsSunday: Attendance | "";
   comment: string;
 };
 
 const initialValues: FormValues = { fullName: "", attendsFriday: "", attendsSaturday: "", attendsSunday: "", comment: "" };
 
-function AttendanceField({ event, value, onChange, error }: { event: Event; value: string; onChange: (value: string) => void; error?: string }) {
+const attendanceOptions: { value: Attendance; label: string }[] = [
+  { value: "yes", label: "Sí asistiré" },
+  { value: "maybe", label: "Tal vez" },
+  { value: "no", label: "No asistiré" },
+];
+
+const attendanceLabels: Record<Attendance, string> = {
+  yes: "Sí asistiré",
+  maybe: "Tal vez",
+  no: "No asistiré",
+};
+
+function AttendanceField({ event, value, onChange, error }: { event: Event; value: Attendance | ""; onChange: (value: Attendance) => void; error?: string }) {
   const fieldId = `attendance-${event.slug}`;
   return (
     <fieldset className="attendance-field">
       <legend><span>{event.title}</span><small>{event.subtitle}</small></legend>
       <div className="attendance-options">
-        <label className={`attendance-option ${value === "yes" ? "is-selected" : ""}`}>
-          <input type="radio" name={fieldId} value="yes" checked={value === "yes"} onChange={() => onChange("yes")} />
-          <span>Sí asistiré</span>
-        </label>
-        <label className={`attendance-option ${value === "no" ? "is-selected" : ""}`}>
-          <input type="radio" name={fieldId} value="no" checked={value === "no"} onChange={() => onChange("no")} />
-          <span>No asistiré</span>
-        </label>
+        {attendanceOptions.map((option) => (
+          <label className={`attendance-option ${value === option.value ? "is-selected" : ""}`} key={option.value}>
+            <input type="radio" name={fieldId} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)} />
+            <span>{option.label}</span>
+          </label>
+        ))}
       </div>
       {error && <p className="field-error">{error}</p>}
     </fieldset>
@@ -44,9 +54,9 @@ function AttendanceField({ event, value, onChange, error }: { event: Event; valu
 function toConfirmation(values: FormValues): Confirmation {
   return {
     fullName: values.fullName.trim(),
-    attendsFriday: values.attendsFriday === "yes",
-    attendsSaturday: values.attendsSaturday === "yes",
-    attendsSunday: values.attendsSunday === "yes",
+    attendsFriday: values.attendsFriday || "no",
+    attendsSaturday: values.attendsSaturday || "no",
+    attendsSunday: values.attendsSunday || "no",
     comment: values.comment.trim() || null,
   };
 }
@@ -59,7 +69,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp" }: { setting
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const confirmationRef = useRef<HTMLHeadingElement>(null);
 
-  const update = (key: keyof FormValues, value: string) => setValues((current) => ({ ...current, [key]: value }));
+  const update = <Key extends keyof FormValues>(key: Key, value: FormValues[Key]) => setValues((current) => ({ ...current, [key]: value }));
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,7 +80,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp" }: { setting
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, attendsFriday: values.attendsFriday === "yes", attendsSaturday: values.attendsSaturday === "yes", attendsSunday: values.attendsSunday === "yes", honeypot: "" }),
+        body: JSON.stringify({ ...values, honeypot: "" }),
       });
       const payload = await response.json() as { confirmation?: Confirmation; errors?: Record<string, string>; message?: string };
       if (!response.ok) {
@@ -96,7 +106,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp" }: { setting
         <p className="confirmation__message">{settings.confirmationMessage}</p>
         <dl className="confirmation__summary">
           <div><dt>Nombre</dt><dd>{confirmation.fullName}</dd></div>
-          {events.map((event) => <div key={event.id}><dt>{event.title}</dt><dd>{attendanceBySlug[event.slug as keyof typeof attendanceBySlug] ? "Sí asistiré" : "No asistiré"}</dd></div>)}
+          {events.map((event) => <div key={event.id}><dt>{event.title}</dt><dd>{attendanceLabels[attendanceBySlug[event.slug as keyof typeof attendanceBySlug]]}</dd></div>)}
           {confirmation.comment && <div><dt>Comentario</dt><dd>{confirmation.comment}</dd></div>}
         </dl>
       </div>
