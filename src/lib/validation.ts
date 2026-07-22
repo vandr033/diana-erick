@@ -35,6 +35,9 @@ export const contentSchema = z.object({
   deadlinePrefix: requiredText("Ingresa el encabezado de la fecha límite.", 120),
   deadlineSubtitle: requiredText("Ingresa el subtítulo de la fecha límite.", 120),
   footerText: requiredText("Ingresa el texto del pie de página.", 120),
+  hotelName: requiredText("Ingresa el nombre del hotel recomendado.", 160),
+  hotelLocationUrl: z.string().url("La URL de ubicación no es válida.").refine((value) => value.startsWith("http://") || value.startsWith("https://"), "La URL debe comenzar con http o https."),
+  transportMessage: requiredText("Ingresa el mensaje de transporte.", 600),
 });
 
 export const settingsSchema = z.object({

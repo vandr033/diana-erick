@@ -47,6 +47,9 @@ export const siteSettings = sqliteTable("site_settings", {
   metaDescription: text("meta_description").notNull(),
   rsvpEnabled: integer("rsvp_enabled", { mode: "boolean" }).notNull().default(true),
   rsvpClosedMessage: text("rsvp_closed_message").notNull(),
+  hotelName: text("hotel_name").notNull().default("Hotel recomendado"),
+  hotelLocationUrl: text("hotel_location_url").notNull().default("https://maps.google.com"),
+  transportMessage: text("transport_message").notNull().default("Para su comodidad, habrá transporte desde {hotel} hacia {eventos}. Si se hospedan en otro lugar, les pedimos coordinar su traslado a {hotel} o llegar directamente al lugar de cada evento."),
   updatedAt: timestamp("updated_at"),
 });
 

@@ -1,6 +1,7 @@
 import { DeadlineSection } from "@/src/components/public/deadline-section";
 import { withInvitationEventArtwork } from "@/src/components/public/invitation-event-artwork";
 import { ItinerarySection } from "@/src/components/public/itinerary-section";
+import { HospitalitySection } from "@/src/components/public/hospitality-section";
 import { PublicFooter } from "@/src/components/public/public-footer";
 import { RsvpSection } from "@/src/components/public/rsvp-section";
 import { getEvents, getSettings } from "@/src/db/queries";
@@ -24,6 +25,7 @@ export async function InvitationV2Page({ saturdayOnly = false }: { saturdayOnly?
   return (
     <InvitationExperience content={content}>
       <ItinerarySection events={invitationEvents} />
+      <HospitalitySection settings={settings} saturdayOnly={saturdayOnly} />
       <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} />
       <DeadlineSection settings={settings} targetEvent={targetEvent} />
       <PublicFooter settings={settings} />

@@ -1,5 +1,6 @@
 import { DeadlineSection } from "./deadline-section";
 import { HeroSection } from "./hero-section";
+import { HospitalitySection } from "./hospitality-section";
 import { withInvitationEventArtwork } from "./invitation-event-artwork";
 import { ItinerarySection } from "./itinerary-section";
 import { PublicFooter } from "./public-footer";
@@ -16,6 +17,7 @@ export async function InvitationPage({ saturdayOnly = false }: { saturdayOnly?: 
     <main data-invitation={saturdayOnly ? "sabado" : "todos"}>
       <HeroSection settings={settings} />
       <ItinerarySection events={events} />
+      <HospitalitySection settings={settings} saturdayOnly={saturdayOnly} />
       <RsvpSection settings={settings} events={events} saturdayOnly={saturdayOnly} />
       <DeadlineSection settings={settings} targetEvent={visibleEvents[0]} />
       <PublicFooter settings={settings} />
