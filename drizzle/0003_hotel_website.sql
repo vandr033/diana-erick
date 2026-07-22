@@ -1,0 +1,1 @@
+ALTER TABLE `site_settings` ADD `hotel_website_url` text DEFAULT 'https://example.com' NOT NULL;

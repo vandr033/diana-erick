@@ -37,6 +37,7 @@ export const contentSchema = z.object({
   footerText: requiredText("Ingresa el texto del pie de página.", 120),
   hotelName: requiredText("Ingresa el nombre del hotel recomendado.", 160),
   hotelLocationUrl: z.string().url("La URL de ubicación no es válida.").refine((value) => value.startsWith("http://") || value.startsWith("https://"), "La URL debe comenzar con http o https."),
+  hotelWebsiteUrl: z.string().url("La URL del sitio web no es válida.").refine((value) => value.startsWith("http://") || value.startsWith("https://"), "La URL debe comenzar con http o https."),
   transportMessage: requiredText("Ingresa el mensaje de transporte.", 600),
 });
 

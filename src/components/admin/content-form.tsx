@@ -7,7 +7,7 @@ const contentFields = [
   ["coupleNames", "Nombres de la pareja", "textarea"], ["heroDateLabel", "Etiqueta de fecha", "input"], ["heroYearLabel", "Etiqueta de año", "input"], ["invitationText", "Texto de invitación", "textarea"], ["heroButtonLabel", "Botón del inicio", "input"],
   ["rsvpTitle", "Título de RSVP", "input"], ["fullNameLabel", "Etiqueta del nombre", "input"], ["attendancePromptLabel", "Indicación de asistencia", "input"], ["commentLabel", "Etiqueta del comentario", "input"], ["submitButtonLabel", "Botón de envío", "input"],
   ["confirmationTitle", "Título de confirmación", "input"], ["confirmationMessage", "Mensaje de confirmación", "textarea"], ["rsvpDeadlineDate", "Fecha límite", "date"], ["deadlinePrefix", "Encabezado de fecha límite", "textarea"], ["deadlineSubtitle", "Subtítulo de fecha límite", "input"], ["footerText", "Texto del pie de página", "input"],
-  ["hotelName", "Nombre del hotel recomendado", "input"], ["hotelLocationUrl", "Enlace de ubicación del hotel", "url"], ["transportMessage", "Mensaje de transporte", "textarea"],
+  ["hotelName", "Nombre del hotel recomendado", "input"], ["hotelLocationUrl", "Enlace de ubicación del hotel", "url"], ["hotelWebsiteUrl", "Sitio web del hotel", "url"], ["transportMessage", "Mensaje de transporte", "textarea"],
 ] as const;
 
 export function ContentForm({ settings }: { settings: SiteSettings }) {

@@ -25,6 +25,7 @@ export const defaultSettings: SiteSettings = {
   rsvpClosedMessage: "Las confirmaciones se encuentran cerradas. Gracias por acompañarnos.",
   hotelName: "Hotel recomendado",
   hotelLocationUrl: "https://maps.google.com",
+  hotelWebsiteUrl: "https://example.com",
   transportMessage: "Para su comodidad, habrá transporte desde {hotel} hacia {eventos}. Si se hospedan en otro lugar, les pedimos coordinar su traslado a {hotel} o llegar directamente al lugar de cada evento.",
   updatedAt: new Date(0),
 };

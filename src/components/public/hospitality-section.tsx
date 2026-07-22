@@ -19,7 +19,10 @@ export function HospitalitySection({ settings, saturdayOnly }: { settings: SiteS
           <div className="hospitality-detail">
             <p className="hospitality-detail__label">Hotel recomendado</p>
             <h3>{settings.hotelName}</h3>
-            <a className="hospitality-detail__link" href={settings.hotelLocationUrl} target="_blank" rel="noreferrer">Ver ubicación</a>
+            <div className="hospitality-detail__links">
+              <a className="hospitality-detail__link" href={settings.hotelLocationUrl} target="_blank" rel="noreferrer">Ver ubicación</a>
+              <a className="hospitality-detail__link" href={settings.hotelWebsiteUrl} target="_blank" rel="noreferrer">Visitar sitio web</a>
+            </div>
           </div>
           <div className="hospitality-detail hospitality-detail--transport">
             <p className="hospitality-detail__label">Transporte</p>
