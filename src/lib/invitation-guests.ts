@@ -27,6 +27,22 @@ export async function importGuests(records: GuestImportRecord[]) {
   return { imported, skipped };
 }
 
+export async function createManualInvitationGuest(input: { name: string; phoneNumber: string | null; saturdayOnly: boolean }) {
+  if (input.phoneNumber) {
+    const existing = await db.select({ id: invitationGuests.id }).from(invitationGuests).where(eq(invitationGuests.phoneNumber, input.phoneNumber)).limit(1);
+    if (existing[0]) return { guest: null, duplicatePhone: true };
+  }
+
+  const now = new Date();
+  const guest: InvitationGuest = {
+    id: newId(), token: newToken(), name: input.name, phoneNumber: input.phoneNumber,
+    saturdayOnly: input.saturdayOnly, customMessage: null, invitationOpenedAt: null,
+    createdAt: now, updatedAt: now,
+  };
+  await db.insert(invitationGuests).values(guest);
+  return { guest, duplicatePhone: false };
+}
+
 export async function getInvitationGuest(token: string) {
   const rows = await db.select().from(invitationGuests).where(eq(invitationGuests.token, token)).limit(1);
   return rows[0] ?? null;

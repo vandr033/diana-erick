@@ -51,11 +51,11 @@ export function WhatsappImportForm() {
 
   const valid = state ? state.rows.length - state.errors.length : 0;
   return <section className="admin-section whatsapp-import">
-    <div className="admin-section-heading"><div><p className="admin-eyebrow">Lista de invitados</p><h2>Importar y validar</h2></div></div>
+    <div className="admin-section-heading"><div><p className="admin-eyebrow">Lista de invitados</p><h2>Importar y validar</h2></div><a className="admin-button admin-button--secondary" href="/plantilla-invitados.xlsx" download>DESCARGAR PLANTILLA</a></div>
     <p className="admin-note">Primera hoja del archivo. Columnas requeridas: <code>{guestImportColumns.join(", ")}</code>. <code>custom_message</code> es opcional y admite <code>{"{name}"}</code> y <code>{"{link}"}</code>.</p>
     <label className="whatsapp-upload"><input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" onChange={(event) => { const file = event.target.files?.[0]; if (file) void readFile(file); }} /><span>{fileName || "Seleccionar archivo Excel"}</span></label>
     {state && <div className="whatsapp-validation" aria-live="polite">
-      {state.missing.length ? <p className="admin-error">Faltan columnas: {state.missing.join(", ")}.</p> : <p className={state.errors.length ? "admin-error" : "admin-success"}>{state.errors.length ? `${state.errors.length} fila(s) necesitan corrección.` : `${valid} invitados listos para entrar a la cola.`}</p>}
+      {state.missing.length ? <p className="admin-error">Faltan columnas: {state.missing.join(", ")}.</p> : <p className={state.errors.length ? "admin-error" : "admin-success"}>{state.errors.length ? `${state.errors.length} fila(s) necesitan corrección.` : `${valid} invitados listos para importar.`}</p>}
       {state.errors.slice(0, 8).map((error) => <p className="whatsapp-validation__error" key={`${error.row}-${error.message}`}>Fila {error.row}: {error.message}</p>)}
       {state.errors.length > 8 && <p className="admin-note">Y {state.errors.length - 8} error(es) más.</p>}
       {!state.errors.length && !state.missing.length && <button className="admin-button admin-button--primary" type="button" disabled={isImporting || !valid} onClick={() => void importRows()}>{isImporting ? "IMPORTANDO…" : `IMPORTAR ${valid} INVITADOS`}</button>}

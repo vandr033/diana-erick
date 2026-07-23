@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { getInvitationGuests, getSettings } from "@/src/db/queries";
 import { formatDateTime } from "@/src/lib/dates";
 import { GeneralInvitationLinks, GuestInvitationActions } from "@/src/components/admin/invitation-link-actions";
+import { ManualInvitationGuestForm } from "@/src/components/admin/manual-invitation-guest-form";
 import { WhatsappImportForm } from "@/src/components/admin/whatsapp-import-form";
 
 async function currentOrigin() {
@@ -20,10 +21,11 @@ export default async function WhatsappPage() {
       {[["Invitados", stats.total], ["Solo sábado", stats.saturdayOnly], ["Abrieron enlace", stats.opened]].map(([label, value]) => <div className="admin-stat" key={String(label)}><span>{label}</span><strong>{value}</strong></div>)}
     </section>
     <GeneralInvitationLinks origin={origin} />
+    <ManualInvitationGuestForm origin={origin} />
     <WhatsappImportForm />
     <section className="admin-section"><div className="admin-section-heading"><div><p className="admin-eyebrow">Lista importada</p><h2>Enviar uno por uno</h2></div></div>
       {rows.length ? <div className="whatsapp-table-wrap"><table className="responses-table whatsapp-table"><thead><tr><th>Invitado</th><th>Invitación</th><th>Abrió enlace</th><th>Acciones</th></tr></thead><tbody>
-        {rows.map((guest) => <tr key={guest.id}><td data-label="Invitado"><strong>{guest.name}</strong><span>{guest.phoneNumber}</span></td><td data-label="Invitación">{guest.saturdayOnly ? "Solo sábado" : "Fin de semana"}</td><td data-label="Abrió enlace">{guest.invitationOpenedAt ? formatDateTime(guest.invitationOpenedAt) : "—"}</td><td data-label="Acciones"><GuestInvitationActions guest={guest} origin={origin} defaultMessage={settings.defaultWhatsappMessage} /></td></tr>)}
+        {rows.map((guest) => <tr key={guest.id}><td data-label="Invitado"><strong>{guest.name}</strong><span>{guest.phoneNumber || "Sin teléfono"}</span></td><td data-label="Invitación">{guest.saturdayOnly ? "Solo sábado" : "Fin de semana"}</td><td data-label="Abrió enlace">{guest.invitationOpenedAt ? formatDateTime(guest.invitationOpenedAt) : "—"}</td><td data-label="Acciones"><GuestInvitationActions guest={guest} origin={origin} defaultMessage={settings.defaultWhatsappMessage} /></td></tr>)}
       </tbody></table></div> : <div className="admin-empty"><p>Aún no hay invitados importados.</p><span>Importa tu Excel para crear enlaces personales.</span></div>}
     </section>
   </div>;

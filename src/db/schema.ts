@@ -111,7 +111,7 @@ export const invitationGuests = sqliteTable(
     id: text("id").primaryKey(),
     token: text("token").notNull(),
     name: text("name").notNull(),
-    phoneNumber: text("phone_number").notNull(),
+    phoneNumber: text("phone_number"),
     saturdayOnly: integer("saturday_only", { mode: "boolean" }).notNull().default(false),
     customMessage: text("custom_message"),
     invitationOpenedAt: integer("invitation_opened_at", { mode: "timestamp_ms" }),

@@ -17,6 +17,21 @@ export const responseAdminSchema = rsvpSchema.omit({ honeypot: true }).extend({
   source: z.enum(["public", "admin"]).optional(),
 });
 
+export const manualInvitationGuestSchema = z.object({
+  name: requiredText("Ingresa el nombre de la persona.", 150),
+  prefix: z.string().trim().max(8, "El prefijo no es válido.").optional().default(""),
+  phoneNumber: z.string().trim().max(24, "El número no es válido.").optional().default(""),
+  saturdayOnly: z.coerce.boolean().default(false),
+}).superRefine((value, context) => {
+  const prefix = value.prefix.replace(/\D/g, "");
+  const phone = value.phoneNumber.replace(/\D/g, "");
+  if (!prefix && !phone) return;
+  if (!prefix) context.addIssue({ code: "custom", path: ["prefix"], message: "Ingresa el código de país, por ejemplo +591." });
+  if (!phone) context.addIssue({ code: "custom", path: ["phoneNumber"], message: "Ingresa el número de teléfono." });
+  if (prefix && !/^\d{1,3}$/.test(prefix)) context.addIssue({ code: "custom", path: ["prefix"], message: "El prefijo debe tener entre 1 y 3 dígitos." });
+  if (prefix && phone && !/^\d{8,15}$/.test(`${prefix}${phone}`)) context.addIssue({ code: "custom", path: ["phoneNumber"], message: "El teléfono debe tener entre 8 y 15 dígitos con el prefijo." });
+});
+
 export const contentSchema = z.object({
   coupleNames: requiredText("Ingresa los nombres de la pareja.", 120),
   heroDateLabel: requiredText("Ingresa la fecha del encabezado.", 80),

@@ -118,7 +118,9 @@ En `/admin/whatsapp`, importa la primera hoja de un archivo `.xlsx`, `.xls` o `.
 
 `custom_message` es opcional. Puede usar `{name}` y `{link}`; si está vacío se usa el mensaje predeterminado. Los teléfonos repetidos dentro del archivo impiden la importación; las personas que ya existen en la base se omiten para evitar reenvíos accidentales.
 
-Cada fila recibe una URL opaca y única bajo `/invitacion/...`. Estas copias personales rellenan el nombre al confirmar y muestran el nombre en el sobre. El panel registra la primera apertura. También puedes copiar enlaces públicos de fin de semana o sábado, y enlaces personales de cada variante.
+El botón **Descargar plantilla** entrega un Excel con la hoja lista para importar y una hoja de instrucciones. También puedes usar **Invitar persona** para crear un enlace personal sin archivo: el nombre es obligatorio y el prefijo y teléfono son opcionales. Si agregas teléfono, ambos campos son necesarios para abrir WhatsApp Web.
+
+Cada fila recibe una URL opaca y única bajo `/invitacion/...`. Estas copias personales rellenan el nombre al confirmar y muestran el nombre en el sobre. El panel registra la primera apertura. También puedes copiar enlaces públicos de fin de semana o sábado, un enlace directo de cada persona, y enlaces personales de cada variante.
 
 ### WhatsApp manual
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { invitationUrl, renderInvitationMessage } from "@/src/lib/invitation-links";
 
-function CopyButton({ label, value }: { label: string; value: string }) {
+export function CopyButton({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard.writeText(value);
@@ -21,14 +21,14 @@ export function GeneralInvitationLinks({ origin }: { origin: string }) {
   </section>;
 }
 
-export function GuestInvitationActions({ guest, origin, defaultMessage }: { guest: { name: string; phoneNumber: string; token: string; saturdayOnly: boolean; customMessage: string | null }; origin: string; defaultMessage: string }) {
+export function GuestInvitationActions({ guest, origin, defaultMessage }: { guest: { name: string; phoneNumber: string | null; token: string; saturdayOnly: boolean; customMessage: string | null }; origin: string; defaultMessage: string }) {
   const preferredLink = invitationUrl(origin, guest.token, guest.saturdayOnly);
   const message = renderInvitationMessage(guest.customMessage || defaultMessage, guest.name, preferredLink);
-  const whatsappUrl = `https://wa.me/${guest.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+  const whatsappUrl = guest.phoneNumber ? `https://wa.me/${guest.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}` : null;
   const allWeekendLink = invitationUrl(origin, guest.token, false);
   const saturdayLink = invitationUrl(origin, guest.token, true);
   return <div className="guest-invitation-actions">
-    <a className="admin-button admin-button--primary" href={whatsappUrl} target="_blank" rel="noreferrer">ENVIAR POR WHATSAPP</a>
-    <div className="guest-invitation-actions__links"><CopyButton label="LINK FIN DE SEMANA" value={allWeekendLink} /><CopyButton label="LINK SÁBADO" value={saturdayLink} /></div>
+    {whatsappUrl && <a className="admin-button admin-button--primary" href={whatsappUrl} target="_blank" rel="noreferrer">ENVIAR POR WHATSAPP</a>}
+    <div className="guest-invitation-actions__links"><CopyButton label="OBTENER ENLACE" value={preferredLink} /><CopyButton label="LINK FIN DE SEMANA" value={allWeekendLink} /><CopyButton label="LINK SÁBADO" value={saturdayLink} /></div>
   </div>;
 }
