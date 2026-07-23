@@ -7,6 +7,7 @@ import { LogoutButton } from "./logout-button";
 const links = [
   ["Resumen", "/admin"],
   ["Respuestas", "/admin/responses"],
+  ["WhatsApp", "/admin/whatsapp"],
   ["Contenido", "/admin/content"],
   ["Eventos", "/admin/events"],
   ["Configuración", "/admin/settings"],

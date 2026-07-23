@@ -9,7 +9,7 @@ import { formatDayMonth, formatLongDate } from "@/src/lib/dates";
 import { createInvitationContent } from "./invitation-content";
 import { InvitationExperience } from "./invitation-experience";
 
-export async function InvitationV2Page({ saturdayOnly = false }: { saturdayOnly?: boolean }) {
+export async function InvitationV2Page({ saturdayOnly = false, initialName }: { saturdayOnly?: boolean; initialName?: string }) {
   const [settings, allEvents] = await Promise.all([getSettings(), getEvents(true)]);
   const saturdayEvent = allEvents.find((event) => event.slug === "sabado");
   const visibleEvents = saturdayOnly && saturdayEvent ? [saturdayEvent] : allEvents;
@@ -26,7 +26,7 @@ export async function InvitationV2Page({ saturdayOnly = false }: { saturdayOnly?
     <InvitationExperience content={content}>
       <ItinerarySection events={invitationEvents} />
       <HospitalitySection settings={settings} saturdayOnly={saturdayOnly} />
-      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} />
+      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} />
       <DeadlineSection settings={settings} targetEvent={targetEvent} />
       <PublicFooter settings={settings} />
     </InvitationExperience>

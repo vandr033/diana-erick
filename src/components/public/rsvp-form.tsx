@@ -61,8 +61,8 @@ function toConfirmation(values: FormValues): Confirmation {
   };
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp" }: { settings: SiteSettings; events: Event[]; endpoint?: string }) {
-  const [values, setValues] = useState(initialValues);
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "" }: { settings: SiteSettings; events: Event[]; endpoint?: string; initialFullName?: string }) {
+  const [values, setValues] = useState(() => ({ ...initialValues, fullName: initialFullName }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);

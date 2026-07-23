@@ -32,6 +32,9 @@ AUTH_SECRET="reemplaza-con-al-menos-32-caracteres-aleatorios"
 ADMIN_EMAIL="admin@example.com"
 ADMIN_PASSWORD="reemplaza-esta-contrasena"
 NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+WA_SENDER_API_KEY=""
+WA_SENDER_WEBHOOK_SECRET="reemplaza-por-un-secreto-unico"
+CRON_SECRET="reemplaza-por-un-secreto-unico"
 ```
 
 La URL `file:local.db` solo debe utilizarse durante el desarrollo. En Vercel se debe utilizar una URL `libsql://...` de Turso y su token.
@@ -82,6 +85,9 @@ Para producción, configura deliberadamente estas variables en Vercel:
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD` o `ADMIN_PASSWORD_HASH`
 - `NEXT_PUBLIC_SITE_URL`
+- `WA_SENDER_API_KEY`
+- `WA_SENDER_WEBHOOK_SECRET`
+- `CRON_SECRET`
 
 Después de crear la base Turso, ejecuta migraciones y seed contra esa base desde un entorno con acceso a Turso:
 
@@ -101,10 +107,39 @@ No se ejecutan migraciones ni seed automáticamente en cada request de Vercel. D
 - `/admin/responses` — búsqueda, filtros, paginación y exportación.
 - `/admin/responses/new` — agregar respuesta manual.
 - `/admin/responses/[id]` — ver, editar o eliminar una respuesta.
+- `/admin/whatsapp` — importar invitados, revisar envíos y reintentar errores.
 - `/admin/content` — editar textos públicos.
 - `/admin/events` — editar los tres eventos.
 - `/admin/settings` — SEO y apertura/cierre de confirmaciones.
 - `/api/admin/responses/export` — exportación protegida `.xlsx`.
+- `/api/cron/whatsapp` — worker protegido que procesa la cola de WhatsApp.
+- `/api/whatsapp/webhook` — actualiza el estado enviado/entregado/leído desde WA Sender.
+
+## Invitaciones por WhatsApp
+
+En `/admin/whatsapp`, importa la primera hoja de un archivo `.xlsx`, `.xls` o `.csv`. Se valida antes de agregar cualquier persona a la cola. Las columnas requeridas son:
+
+- `name`
+- `prefix` — código de país, por ejemplo `+591`.
+- `phone_number` — teléfono nacional sin el prefijo.
+- `solo_invitado_sabado` — `true`/`false`, `sí`/`no`, `1`/`0` o `x`.
+
+`custom_message` es opcional. Puede usar `{name}` y `{link}`; si está vacío se usa el mensaje predeterminado. Los teléfonos repetidos dentro del archivo impiden la importación; las personas que ya existen en la base se omiten para evitar reenvíos accidentales.
+
+Cada fila recibe una URL opaca y única bajo `/invitacion/...`. Estas son copias personales de `/` o `/sabado`, según `solo_invitado_sabado`; mantienen las rutas originales anónimas y rellenan el nombre al confirmar. El panel registra la primera apertura del enlace y los estados de WhatsApp.
+
+### WA Sender + Vercel
+
+El worker se ejecuta por Vercel Cron cada minuto, procesa hasta cuatro mensajes secuencialmente y espera cinco segundos entre cada solicitud. Esto coincide con el modo de protección de cuenta de WA Sender y evita un proceso permanente en Vercel.
+
+Después de desplegar:
+
+1. Configura las tres variables de WhatsApp indicadas arriba en Vercel.
+2. En la sesión de WA Sender, configura `https://TU_DOMINIO/api/whatsapp/webhook` como **Webhook URL**, guarda el mismo valor de `WA_SENDER_WEBHOOK_SECRET` como **Webhook Secret**, y activa `messages.update`.
+3. Conserva `vercel.json`; su cron llama a `/api/cron/whatsapp` y Vercel lo autentica con `CRON_SECRET`.
+4. Asegúrate de que tu plan de Vercel permita cron cada minuto antes de cargar una lista grande.
+
+WA Sender usa `POST /api/send-message` con `Authorization: Bearer ...` y un cuerpo `{ to, text }`; sus eventos `messages.update` actualizan los estados del panel. Consulta la [documentación de envío](https://api.wasenderapi.com/api-docs/messages/send-text-message) y la [configuración de webhooks](https://wasenderapi.com/api-docs/webhooks/webhook-setup) si cambias la sesión o las credenciales.
 
 ## Imágenes
 
@@ -123,7 +158,7 @@ Las respuestas enviadas desde `/sabado` se guardan automáticamente con `attends
 ## Limitaciones intencionales
 
 - No hay edición pública de una respuesta.
-- No hay correos, WhatsApp, SMS, notificaciones ni recordatorios.
+- No hay correos, SMS ni recordatorios automáticos fuera de la cola de WhatsApp.
 - No hay registro público, roles, múltiples administradores ni recuperación de contraseña.
 - No hay carga de imágenes ni editor HTML.
 - La fecha límite es informativa; el administrador controla manualmente si el RSVP está abierto.

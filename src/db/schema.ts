@@ -104,7 +104,57 @@ export const rsvpResponses = sqliteTable(
   ],
 );
 
+export const whatsappMessageStatuses = ["queued", "sending", "sent", "delivered", "read", "failed"] as const;
+
+export const invitationGuests = sqliteTable(
+  "invitation_guests",
+  {
+    id: text("id").primaryKey(),
+    token: text("token").notNull(),
+    name: text("name").notNull(),
+    phoneNumber: text("phone_number").notNull(),
+    saturdayOnly: integer("saturday_only", { mode: "boolean" }).notNull().default(false),
+    customMessage: text("custom_message"),
+    invitationOpenedAt: integer("invitation_opened_at", { mode: "timestamp_ms" }),
+    createdAt: timestamp("created_at"),
+    updatedAt: timestamp("updated_at"),
+  },
+  (table) => [
+    uniqueIndex("invitation_guests_token_idx").on(table.token),
+    uniqueIndex("invitation_guests_phone_number_idx").on(table.phoneNumber),
+    index("invitation_guests_opened_idx").on(table.invitationOpenedAt),
+  ],
+);
+
+export const whatsappMessages = sqliteTable(
+  "whatsapp_messages",
+  {
+    id: text("id").primaryKey(),
+    guestId: text("guest_id").notNull().references(() => invitationGuests.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    status: text("status", { enum: whatsappMessageStatuses }).notNull().default("queued"),
+    providerMessageId: text("provider_message_id"),
+    errorMessage: text("error_message"),
+    attempts: integer("attempts").notNull().default(0),
+    queuedAt: timestamp("queued_at"),
+    processingStartedAt: integer("processing_started_at", { mode: "timestamp_ms" }),
+    sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+    deliveredAt: integer("delivered_at", { mode: "timestamp_ms" }),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    failedAt: integer("failed_at", { mode: "timestamp_ms" }),
+    updatedAt: timestamp("updated_at"),
+  },
+  (table) => [
+    uniqueIndex("whatsapp_messages_guest_idx").on(table.guestId),
+    uniqueIndex("whatsapp_messages_provider_message_idx").on(table.providerMessageId),
+    index("whatsapp_messages_status_idx").on(table.status),
+  ],
+);
+
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type Event = typeof events.$inferSelect;
 export type RsvpResponse = typeof rsvpResponses.$inferSelect;
 export type Attendance = (typeof attendanceValues)[number];
+export type InvitationGuest = typeof invitationGuests.$inferSelect;
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type WhatsappMessageStatus = (typeof whatsappMessageStatuses)[number];
