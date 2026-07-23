@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, or, sql } from "drizzle-orm";
 import { db } from "./client";
-import { events, invitationGuests, rsvpResponses, siteSettings, whatsappMessages } from "./schema";
+import { events, invitationGuests, rsvpResponses, siteSettings } from "./schema";
 import { defaultEvents, defaultSettings } from "@/src/lib/defaults";
 
 function normalizeEventIconPath(event: typeof defaultEvents[number]) {
@@ -82,24 +82,18 @@ export async function getDashboardStats() {
   }
 }
 
-export async function getWhatsappDashboard() {
+export async function getInvitationGuests() {
   try {
-    const rows = await db.select({ guest: invitationGuests, message: whatsappMessages })
-      .from(invitationGuests)
-      .leftJoin(whatsappMessages, eq(whatsappMessages.guestId, invitationGuests.id))
-      .orderBy(desc(invitationGuests.createdAt));
+    const rows = await db.select().from(invitationGuests).orderBy(desc(invitationGuests.createdAt));
     return {
       rows,
       stats: {
         total: rows.length,
-        queued: rows.filter((row) => row.message?.status === "queued").length,
-        sent: rows.filter((row) => ["sent", "delivered", "read"].includes(row.message?.status ?? "")).length,
-        opened: rows.filter((row) => row.guest.invitationOpenedAt).length,
-        delivered: rows.filter((row) => row.message?.status === "delivered" || row.message?.status === "read").length,
-        failed: rows.filter((row) => row.message?.status === "failed").length,
+        opened: rows.filter((row) => row.invitationOpenedAt).length,
+        saturdayOnly: rows.filter((row) => row.saturdayOnly).length,
       },
     };
   } catch {
-    return { rows: [], stats: { total: 0, queued: 0, sent: 0, opened: 0, delivered: 0, failed: 0 } };
+    return { rows: [], stats: { total: 0, opened: 0, saturdayOnly: 0 } };
   }
 }

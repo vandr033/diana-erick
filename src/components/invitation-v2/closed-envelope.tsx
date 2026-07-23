@@ -39,7 +39,7 @@ function WaxSeal({ open = false }: { open?: boolean }) {
         src="/images/D-E-Stamp-cutout.png"
         alt=""
         fill
-        sizes={open ? "68px" : "102px"}
+        sizes={open ? "84px" : "126px"}
         className={styles.sealImage}
         draggable={false}
         priority
@@ -64,14 +64,7 @@ export function ClosedEnvelope({
     <section id="inicio" className={styles.invitationStage}>
       <header className={styles.closedHeader} aria-hidden={state !== "closed"}>
         <span>{content.headerDate}</span>
-        <Image
-          src="/images/hero-flower-placeholder.png"
-          alt=""
-          width={279}
-          height={164}
-          className={styles.closedFlowerImage}
-          priority
-        />
+        <span className={styles.closedFlowerFrame}><Image src="/images/hero-flower-placeholder.png" alt="" width={279} height={164} className={styles.closedFlowerImage} priority /></span>
         <span>{content.headerYear}</span>
       </header>
 
@@ -120,11 +113,7 @@ export function ClosedEnvelope({
         <WaxSeal />
         <WaxSeal open />
 
-        <span className={styles.recipientDetails} aria-hidden="true">
-          <span>Para: Nuestro invitado</span>
-          <span className={styles.recipientDivider} />
-          <span>{content.formattedDateRange}</span>
-        </span>
+        {content.recipientName ? <span className={styles.recipientDetails} aria-hidden="true"><span>Para: {content.recipientName}</span><span className={styles.recipientDivider} /><span>{content.formattedDateRange}</span></span> : null}
 
         <button
           type="button"

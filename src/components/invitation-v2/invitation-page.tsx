@@ -20,7 +20,8 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName }: { 
     yearLabel: saturdayEvent.date.slice(0, 4),
     introduction: `Te invitamos a compartir con nosotros\nen nuestra boda el ${formatLongDate(saturdayEvent.date)}`,
     discoverLabel: "Descubrir la celebración",
-  } : undefined);
+    recipientName: initialName,
+  } : initialName ? { recipientName: initialName } : undefined);
 
   return (
     <InvitationExperience content={content}>

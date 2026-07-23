@@ -37,7 +37,7 @@ export function WhatsappImportForm() {
       const response = await fetch("/api/admin/whatsapp/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: state.rows }) });
       const result = await response.json() as { imported?: number; skipped?: number; message?: string };
       if (!response.ok) throw new Error(result.message || "No fue posible importar el archivo.");
-      setMessage(`Se agregaron ${result.imported ?? 0} invitados a la cola${result.skipped ? `; ${result.skipped} ya existían y no se reenviaron` : ""}.`);
+      setMessage(`Se agregaron ${result.imported ?? 0} invitados${result.skipped ? `; ${result.skipped} ya existían y no se duplicaron` : ""}.`);
       setState(null);
       if (inputRef.current) inputRef.current.value = "";
       setFileName(null);
@@ -58,7 +58,7 @@ export function WhatsappImportForm() {
       {state.missing.length ? <p className="admin-error">Faltan columnas: {state.missing.join(", ")}.</p> : <p className={state.errors.length ? "admin-error" : "admin-success"}>{state.errors.length ? `${state.errors.length} fila(s) necesitan corrección.` : `${valid} invitados listos para entrar a la cola.`}</p>}
       {state.errors.slice(0, 8).map((error) => <p className="whatsapp-validation__error" key={`${error.row}-${error.message}`}>Fila {error.row}: {error.message}</p>)}
       {state.errors.length > 8 && <p className="admin-note">Y {state.errors.length - 8} error(es) más.</p>}
-      {!state.errors.length && !state.missing.length && <button className="admin-button admin-button--primary" type="button" disabled={isImporting || !valid} onClick={() => void importRows()}>{isImporting ? "IMPORTANDO…" : `AGREGAR ${valid} A LA COLA`}</button>}
+      {!state.errors.length && !state.missing.length && <button className="admin-button admin-button--primary" type="button" disabled={isImporting || !valid} onClick={() => void importRows()}>{isImporting ? "IMPORTANDO…" : `IMPORTAR ${valid} INVITADOS`}</button>}
     </div>}
     {message && <p className="admin-note whatsapp-import__message" role="status">{message}</p>}
   </section>;

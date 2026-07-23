@@ -39,6 +39,7 @@ export const contentSchema = z.object({
   hotelLocationUrl: z.string().url("La URL de ubicación no es válida.").refine((value) => value.startsWith("http://") || value.startsWith("https://"), "La URL debe comenzar con http o https."),
   hotelWebsiteUrl: z.string().url("La URL del sitio web no es válida.").refine((value) => value.startsWith("http://") || value.startsWith("https://"), "La URL debe comenzar con http o https."),
   transportMessage: requiredText("Ingresa el mensaje de transporte.", 600),
+  defaultWhatsappMessage: requiredText("Ingresa el mensaje predeterminado de WhatsApp.", 2000),
 });
 
 export const settingsSchema = z.object({

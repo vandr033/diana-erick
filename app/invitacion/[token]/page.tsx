@@ -1,7 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { InvitationV2Page } from "@/src/components/invitation-v2/invitation-page";
 import { InvitationOpenTracker } from "@/src/components/public/invitation-open-tracker";
-import { getInvitationGuest } from "@/src/lib/whatsapp";
+import { getInvitationGuest } from "@/src/lib/invitation-guests";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,5 @@ export default async function PersonalInvitationPage({ params }: { params: Promi
   const { token } = await params;
   const guest = await getInvitationGuest(token);
   if (!guest) notFound();
-  if (guest.saturdayOnly) redirect(`/invitacion/${token}/sabado` as never);
   return <><InvitationOpenTracker token={token} /><InvitationV2Page initialName={guest.name} /></>;
 }

@@ -9,11 +9,12 @@ export type WeddingInvitationContent = {
   introduction: string;
   location: string;
   discoverLabel: string;
+  recipientName?: string;
 };
 
 export function createInvitationContent(
   settings: SiteSettings,
-  overrides: { dateLabel?: string; yearLabel?: string; introduction?: string; discoverLabel?: string } = {},
+  overrides: { dateLabel?: string; yearLabel?: string; introduction?: string; discoverLabel?: string; recipientName?: string } = {},
 ): WeddingInvitationContent {
   const nameLines = settings.coupleNames
     .split("\n")
@@ -35,5 +36,6 @@ export function createInvitationContent(
       "Te invitamos a celebrar con nosotros tres días muy especiales.",
     location: "SANTA CRUZ, BOLIVIA",
     discoverLabel: overrides.discoverLabel || "Descubrir el fin de semana",
+    recipientName: overrides.recipientName,
   };
 }

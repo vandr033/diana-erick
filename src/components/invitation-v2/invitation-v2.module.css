@@ -59,10 +59,17 @@
   text-align: left;
 }
 
-.closedFlowerImage {
+.closedFlowerFrame {
   width: 54px;
   height: 66px;
-  object-fit: contain;
+  overflow: hidden;
+}
+
+.closedFlowerImage {
+  width: 100px;
+  max-width: none;
+  height: auto;
+  transform: translate(-46%, 2px);
   opacity: 0.88;
   filter: brightness(0) saturate(100%) invert(41%) sepia(20%) saturate(902%) hue-rotate(34deg) brightness(86%) contrast(86%);
 }
@@ -289,12 +296,12 @@
 
 .closedSeal {
   top: 50%;
-  width: clamp(86px, 24vw, 102px);
+  width: clamp(106px, 30vw, 126px);
 }
 
 .openSeal {
   top: 98%;
-  width: 68px;
+  width: 84px;
   opacity: 0;
   transform: translate(-50%, -44%) scale(0.9) rotate(2deg);
   transition:
@@ -791,9 +798,10 @@
   }
 
   .closedFlowerImage {
-    width: 62px;
-    height: 74px;
+    width: 114px;
   }
+
+  .closedFlowerFrame { width: 62px; height: 74px; }
 
   .root[data-state="opening-flap"] .scene,
   .root[data-state="raising-card"] .scene,
@@ -834,9 +842,10 @@
   }
 
   .closedFlowerImage {
-    width: 46px;
-    height: 58px;
+    width: 88px;
   }
+
+  .closedFlowerFrame { width: 46px; height: 58px; }
 
   .scene {
     top: clamp(160px, 23svh, 196px);

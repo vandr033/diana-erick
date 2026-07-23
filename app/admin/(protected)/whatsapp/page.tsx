@@ -1,22 +1,30 @@
-import { getWhatsappDashboard } from "@/src/db/queries";
+import { headers } from "next/headers";
+import { getInvitationGuests, getSettings } from "@/src/db/queries";
 import { formatDateTime } from "@/src/lib/dates";
+import { GeneralInvitationLinks, GuestInvitationActions } from "@/src/components/admin/invitation-link-actions";
 import { WhatsappImportForm } from "@/src/components/admin/whatsapp-import-form";
-import { WhatsappRetryButton } from "@/src/components/admin/whatsapp-retry-button";
 
-const statusLabel: Record<string, string> = { queued: "En cola", sending: "Enviando", sent: "Enviado", delivered: "Entregado", read: "Leído", failed: "Falló" };
+async function currentOrigin() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000";
+  const protocol = requestHeaders.get("x-forwarded-proto") || "https";
+  return `${protocol}://${host}`;
+}
 
 export default async function WhatsappPage() {
-  const { rows, stats } = await getWhatsappDashboard();
+  const [{ rows, stats }, settings, origin] = await Promise.all([getInvitationGuests(), getSettings(), currentOrigin()]);
   return <div className="admin-page whatsapp-page">
-    <div className="admin-page-heading"><div><p className="admin-eyebrow">Invitaciones personales</p><h1>WhatsApp</h1><p className="admin-subtitle">Cada invitación usa un enlace único, registra su apertura y completa el nombre automáticamente.</p></div></div>
-    <section className="admin-stats-grid" aria-label="Estado de WhatsApp">
-      {[["Invitados", stats.total], ["En cola", stats.queued], ["Enviados", stats.sent], ["Entregados", stats.delivered], ["Abrieron enlace", stats.opened], ["Fallidos", stats.failed]].map(([label, value]) => <div className="admin-stat" key={String(label)}><span>{label}</span><strong>{value}</strong></div>)}
+    <div className="admin-page-heading"><div><p className="admin-eyebrow">Invitaciones personales</p><h1>Invitados</h1><p className="admin-subtitle">Importa tu lista, abre WhatsApp Web para cada persona y comparte enlaces con o sin nombre.</p></div></div>
+    <section className="admin-stats-grid" aria-label="Resumen de invitados">
+      {[["Invitados", stats.total], ["Solo sábado", stats.saturdayOnly], ["Abrieron enlace", stats.opened]].map(([label, value]) => <div className="admin-stat" key={String(label)}><span>{label}</span><strong>{value}</strong></div>)}
     </section>
+    <GeneralInvitationLinks origin={origin} />
     <WhatsappImportForm />
-    <section className="admin-section"><div className="admin-section-heading"><div><p className="admin-eyebrow">Seguimiento</p><h2>Estado por invitado</h2></div></div>
-      {rows.length ? <div className="whatsapp-table-wrap"><table className="responses-table whatsapp-table"><thead><tr><th>Invitado</th><th>Invitación</th><th>WhatsApp</th><th>Abrió enlace</th><th>Detalle</th></tr></thead><tbody>
-        {rows.map(({ guest, message }) => <tr key={guest.id}><td data-label="Invitado"><strong>{guest.name}</strong><span>{guest.phoneNumber}</span></td><td data-label="Invitación">{guest.saturdayOnly ? "Solo sábado" : "Fin de semana"}</td><td data-label="WhatsApp"><span className={`status-badge status-badge--${message?.status ?? "queued"}`}>{statusLabel[message?.status ?? "queued"]}</span></td><td data-label="Abrió enlace">{guest.invitationOpenedAt ? formatDateTime(guest.invitationOpenedAt) : "—"}</td><td data-label="Detalle">{message?.status === "failed" ? <div className="whatsapp-failure"><span>{message.errorMessage || "Error desconocido"}</span><WhatsappRetryButton messageId={message.id} /></div> : message?.sentAt ? formatDateTime(message.sentAt) : "—"}</td></tr>)}
-      </tbody></table></div> : <div className="admin-empty"><p>Aún no hay invitados en la cola.</p><span>Importa tu Excel para crear invitaciones personales.</span></div>}
+    <section className="admin-section"><div className="admin-section-heading"><div><p className="admin-eyebrow">Lista importada</p><h2>Enviar uno por uno</h2></div></div>
+      {rows.length ? <div className="whatsapp-table-wrap"><table className="responses-table whatsapp-table"><thead><tr><th>Invitado</th><th>Invitación</th><th>Abrió enlace</th><th>Acciones</th></tr></thead><tbody>
+        {rows.map((guest) => <tr key={guest.id}><td data-label="Invitado"><strong>{guest.name}</strong><span>{guest.phoneNumber}</span></td><td data-label="Invitación">{guest.saturdayOnly ? "Solo sábado" : "Fin de semana"}</td><td data-label="Abrió enlace">{guest.invitationOpenedAt ? formatDateTime(guest.invitationOpenedAt) : "—"}</td><td data-label="Acciones"><GuestInvitationActions guest={guest} origin={origin} defaultMessage={settings.defaultWhatsappMessage} /></td></tr>)}
+      </tbody></table></div> : <div className="admin-empty"><p>Aún no hay invitados importados.</p><span>Importa tu Excel para crear enlaces personales.</span></div>}
     </section>
   </div>;
 }

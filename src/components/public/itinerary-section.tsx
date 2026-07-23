@@ -7,7 +7,7 @@ export function ItinerarySection({ events }: { events: Event[] }) {
       <div className="itinerary-panel">
         <div className="section-intro section-intro--itinerary">
           <p className="eyebrow">{events.length === 1 ? "Una celebración para compartir" : "Tres días para celebrar"}</p>
-          <h2 id="itinerario-title">{events.length === 1 ? "El sábado" : "El fin de semana"}</h2>
+          <h2 id="itinerario-title">{events.length === 1 ? "La celebración" : "El fin de semana"}</h2>
         </div>
         <div className={`itinerary-grid ${events.length === 1 ? "itinerary-grid--single" : ""}`}>
           {events.map((event) => <EventColumn key={event.id} event={event} />)}
