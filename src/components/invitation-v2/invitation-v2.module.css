@@ -301,7 +301,7 @@
 
 .openSeal {
   top: 98%;
-  width: 84px;
+  width: 140px;
   opacity: 0;
   transform: translate(-50%, -44%) scale(0.9) rotate(2deg);
   transition:
@@ -473,6 +473,7 @@
   object-fit: contain;
   opacity: 0.84;
   filter: brightness(0) saturate(100%) invert(41%) sepia(20%) saturate(902%) hue-rotate(34deg) brightness(86%) contrast(86%);
+  transform: translateX(-21%);
 }
 
 .coupleNames {

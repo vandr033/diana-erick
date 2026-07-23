@@ -138,7 +138,8 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .hospitality-detail__link { width: fit-content; margin-top: 6px; color: var(--color-olive-dark); text-decoration: none; text-transform: uppercase; letter-spacing: .13em; font-size: 9px; font-weight: 700; border-bottom: 1px solid var(--color-border); padding-bottom: 3px; }
 .hospitality-detail__link:hover { border-color: var(--color-olive-dark); }
 
-.rsvp-section { min-height: 100svh; display: flex; align-items: center; padding: clamp(72px, 12vw, 152px) 20px; background: var(--color-cream-light); }
+.rsvp-section { position: relative; min-height: 100svh; display: flex; align-items: center; padding: clamp(72px, 12vw, 152px) 20px; border-top: 1px solid color-mix(in srgb, var(--color-olive) 52%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--color-olive) 6%, var(--color-cream)) 0%, var(--color-cream) 50%, color-mix(in srgb, var(--color-olive) 6%, var(--color-cream)) 100%); }
+.rsvp-section::before { content: ""; position: absolute; top: 0; left: 50%; width: clamp(48px, 7vw, 76px); height: 1px; background: var(--color-olive-dark); transform: translateX(-50%); }
 .rsvp-shell { width: min(100%, 530px); margin: 0 auto; }
 .rsvp-shell h2 { font-size: clamp(58px, 8vw, 88px); color: var(--color-olive-dark); line-height: .8; margin: 12px 0 24px; }
 .rsvp-form { display: grid; gap: 24px; padding-top: 25px; }
