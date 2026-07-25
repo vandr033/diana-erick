@@ -1,0 +1,1 @@
+ALTER TABLE `invitation_guests` ADD `whatsapp_sent_at` integer;

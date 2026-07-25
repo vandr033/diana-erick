@@ -110,6 +110,7 @@ export const invitationGuests = sqliteTable(
     phoneNumber: text("phone_number"),
     saturdayOnly: integer("saturday_only", { mode: "boolean" }).notNull().default(false),
     customMessage: text("custom_message"),
+    whatsappSentAt: integer("whatsapp_sent_at", { mode: "timestamp_ms" }),
     invitationOpenedAt: integer("invitation_opened_at", { mode: "timestamp_ms" }),
     createdAt: timestamp("created_at"),
     updatedAt: timestamp("updated_at"),

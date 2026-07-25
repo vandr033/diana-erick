@@ -32,6 +32,17 @@ export const manualInvitationGuestSchema = z.object({
   if (prefix && phone && !/^\d{8,15}$/.test(`${prefix}${phone}`)) context.addIssue({ code: "custom", path: ["phoneNumber"], message: "El teléfono debe tener entre 8 y 15 dígitos con el prefijo." });
 });
 
+export const invitationGuestUpdateSchema = z.object({
+  name: requiredText("Ingresa el nombre de la persona.", 150),
+  phoneNumber: z.string().trim().max(24, "El número no es válido.").nullable().optional(),
+  saturdayOnly: z.coerce.boolean().default(false),
+  customMessage: z.string().trim().max(2000, "El mensaje no puede superar los 2.000 caracteres.").nullable().optional(),
+}).superRefine((value, context) => {
+  if (value.phoneNumber && !/^\+\d{8,15}$/.test(value.phoneNumber.replace(/\D/g, "").replace(/^/, "+"))) {
+    context.addIssue({ code: "custom", path: ["phoneNumber"], message: "Usa un teléfono internacional válido, por ejemplo +59170000000." });
+  }
+});
+
 export const contentSchema = z.object({
   coupleNames: requiredText("Ingresa los nombres de la pareja.", 120),
   heroDateLabel: requiredText("Ingresa la fecha del encabezado.", 80),

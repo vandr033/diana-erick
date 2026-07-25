@@ -57,6 +57,13 @@
       "when": 1784949711088,
       "tag": "0007_gorgeous_ego",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1784963603547,
+      "tag": "0008_fixed_joseph",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import { getInvitationGuests, getSettings } from "@/src/db/queries";
-import { formatDateTime } from "@/src/lib/dates";
-import { GeneralInvitationLinks, GuestInvitationActions } from "@/src/components/admin/invitation-link-actions";
+import { GeneralInvitationLinks } from "@/src/components/admin/invitation-link-actions";
 import { ManualInvitationGuestForm } from "@/src/components/admin/manual-invitation-guest-form";
 import { WhatsappImportForm } from "@/src/components/admin/whatsapp-import-form";
+import { WhatsappGuestList } from "@/src/components/admin/whatsapp-guest-list";
 
 async function currentOrigin() {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
@@ -23,10 +23,6 @@ export default async function WhatsappPage() {
     <GeneralInvitationLinks origin={origin} />
     <ManualInvitationGuestForm origin={origin} />
     <WhatsappImportForm />
-    <section className="admin-section"><div className="admin-section-heading"><div><p className="admin-eyebrow">Lista importada</p><h2>Enviar uno por uno</h2></div></div>
-      {rows.length ? <div className="whatsapp-table-wrap"><table className="responses-table whatsapp-table"><thead><tr><th>Invitado</th><th>Invitación</th><th>Abrió enlace</th><th>Acciones</th></tr></thead><tbody>
-        {rows.map((guest) => <tr key={guest.id}><td data-label="Invitado"><strong>{guest.name}</strong><span>{guest.phoneNumber || "Sin teléfono"}</span></td><td data-label="Invitación">{guest.saturdayOnly ? "Solo sábado" : "Fin de semana"}</td><td data-label="Abrió enlace">{guest.invitationOpenedAt ? formatDateTime(guest.invitationOpenedAt) : "—"}</td><td data-label="Acciones"><GuestInvitationActions guest={guest} origin={origin} defaultMessage={settings.defaultWhatsappMessage} /></td></tr>)}
-      </tbody></table></div> : <div className="admin-empty"><p>Aún no hay invitados importados.</p><span>Importa tu Excel para crear enlaces personales.</span></div>}
-    </section>
+    {rows.length ? <WhatsappGuestList initialGuests={rows} origin={origin} defaultMessage={settings.defaultWhatsappMessage} /> : <section className="admin-section"><div className="admin-empty"><p>Aún no hay invitados importados.</p><span>Importa tu Excel para crear enlaces personales.</span></div></section>}
   </div>;
 }
