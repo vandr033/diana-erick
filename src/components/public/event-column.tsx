@@ -26,14 +26,14 @@ export function EventColumn({ event }: { event: Event }) {
         event={event}
         triggerLabel={isSaturday ? "Más detalles" : undefined}
       />
-      {event.mapsUrl && (
+      {event.mapsUrl && event.address && (
         <a
           href={event.mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="event-location-link"
         >
-          Ver ubicación ↗
+          {event.address} ↗
         </a>
       )}
     </div>

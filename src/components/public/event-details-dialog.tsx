@@ -38,12 +38,11 @@ export function EventDetailsDialog({
           <div className="event-dialog__details">
             {event.startTime && <p><strong>Horario</strong>{event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}</p>}
             {event.venueName && <p><strong>Lugar</strong>{event.venueName}</p>}
-            {event.address && <p><strong>Dirección</strong>{event.address}</p>}
+            {event.address && <p><strong>Dirección</strong>{event.mapsUrl ? <a className="text-link" href={event.mapsUrl} target="_blank" rel="noopener noreferrer">{event.address} ↗</a> : event.address}</p>}
             {event.description && <p><strong>Detalles</strong>{event.description}</p>}
             {event.dressCodeDescription && <p><strong>{event.dressCodeTitle || "Vestimenta"}</strong>{event.dressCodeDescription}</p>}
             {event.additionalNote && <p><strong>Nota</strong>{event.additionalNote}</p>}
           </div>
-          {event.mapsUrl && <a className="text-link" href={event.mapsUrl} target="_blank" rel="noopener noreferrer">Ver ubicación ↗</a>}
         </div>
       </dialog>
     </>
