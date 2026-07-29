@@ -19,16 +19,21 @@ const choices: { value: Attendance; label: string }[] = [
   { value: "no", label: "No asistiré" },
 ];
 
-function AttendanceChoice({ label, value, onChange }: { label: string; value: Attendance; onChange: (value: Attendance) => void }) {
-  return <fieldset className="admin-attendance-field"><legend>{label}</legend><div className="admin-choice-row">{choices.map((choice) => <label className={value === choice.value ? "is-selected" : ""} key={choice.value}><input type="radio" checked={value === choice.value} onChange={() => onChange(choice.value)} /> {choice.label}</label>)}</div></fieldset>;
+function AttendanceChoice({ label, value, onChange, disabled = false }: { label: string; value: Attendance; onChange: (value: Attendance) => void; disabled?: boolean }) {
+  return <fieldset className="admin-attendance-field" disabled={disabled}><legend>{label}</legend><div className="admin-choice-row">{choices.map((choice) => <label className={value === choice.value ? "is-selected" : ""} key={choice.value}><input type="radio" checked={value === choice.value} onChange={() => onChange(choice.value)} /> {choice.label}</label>)}</div></fieldset>;
 }
 
 export function ResponseForm({ response, mode = "edit" }: { response?: RsvpResponse; mode?: "new" | "edit" }) {
   const [values, setValues] = useState(() => fromResponse(response));
+  const [saturdayOnly, setSaturdayOnly] = useState(() => response?.attendsFriday === "no" && response.attendsSunday === "no");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const update = <Key extends keyof Values>(key: Key, value: Values[Key]) => setValues((current) => ({ ...current, [key]: value }));
+  const updateSaturdayOnly = (checked: boolean) => {
+    setSaturdayOnly(checked);
+    if (checked) setValues((current) => ({ ...current, attendsFriday: "no", attendsSunday: "no" }));
+  };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setError(""); setMessage(""); setIsSaving(true);
@@ -45,7 +50,8 @@ export function ResponseForm({ response, mode = "edit" }: { response?: RsvpRespo
 
   return <form className="admin-form response-form" onSubmit={submit}>
     <div className="admin-field"><label htmlFor="response-full-name">Nombre completo</label><input id="response-full-name" value={values.fullName} onChange={(event) => update("fullName", event.target.value)} required minLength={2} maxLength={150} /></div>
-    <div className="admin-form-grid admin-form-grid--three"><AttendanceChoice label="Viernes" value={values.attendsFriday} onChange={(value) => update("attendsFriday", value)} /><AttendanceChoice label="Sábado" value={values.attendsSaturday} onChange={(value) => update("attendsSaturday", value)} /><AttendanceChoice label="Domingo" value={values.attendsSunday} onChange={(value) => update("attendsSunday", value)} /></div>
+    <label className="admin-toggle"><input type="checkbox" checked={saturdayOnly} onChange={(event) => updateSaturdayOnly(event.target.checked)} /><span>Solo sábado</span></label>
+    <div className="admin-form-grid admin-form-grid--three"><AttendanceChoice label="Viernes" value={values.attendsFriday} onChange={(value) => update("attendsFriday", value)} disabled={saturdayOnly} /><AttendanceChoice label="Sábado" value={values.attendsSaturday} onChange={(value) => update("attendsSaturday", value)} /><AttendanceChoice label="Domingo" value={values.attendsSunday} onChange={(value) => update("attendsSunday", value)} disabled={saturdayOnly} /></div>
     <div className="admin-field"><label htmlFor="response-comment">Comentario adicional</label><textarea id="response-comment" value={values.comment} onChange={(event) => update("comment", event.target.value)} maxLength={1000} rows={5} /></div>
     {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-success" role="status">{message}</p>}
     <div className="admin-form-actions"><button className="admin-button admin-button--primary" type="submit" disabled={isSaving}>{isSaving ? "Guardando…" : "Guardar respuesta"}</button><Link className="admin-button admin-button--secondary" href={"/admin/responses" as never}>Cancelar</Link></div>

@@ -8,7 +8,7 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
   try {
     const body = await request.json() as Record<string, unknown>;
     if (body.honeypot) return NextResponse.json({ ok: true, confirmation: body }, { status: 201 });
-    const parsed = rsvpSchema.safeParse(body);
+    const parsed = rsvpSchema.safeParse(scope === "saturday" ? { ...body, attendsFriday: "no", attendsSunday: "no" } : body);
     if (!parsed.success) {
       const errors: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
