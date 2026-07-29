@@ -68,3 +68,8 @@ export async function markWhatsappSent(id: string) {
   const updated = await db.update(invitationGuests).set({ whatsappSentAt: new Date(), updatedAt: new Date() }).where(eq(invitationGuests.id, id)).returning();
   return updated[0] ?? null;
 }
+
+export async function deleteInvitationGuest(id: string) {
+  const deleted = await db.delete(invitationGuests).where(eq(invitationGuests.id, id)).returning({ id: invitationGuests.id });
+  return Boolean(deleted[0]);
+}

@@ -101,6 +101,24 @@ export function WhatsappGuestList({ initialGuests, origin, defaultMessage }: { i
     }
   };
 
+  const deleteGuest = async (guest: Guest) => {
+    if (!window.confirm(`¿Eliminar a ${guest.name} de la lista de invitados? Esta acción no se puede deshacer.`)) return;
+    setSavingId(guest.id);
+    try {
+      const response = await fetch(`/api/admin/whatsapp/guests/${guest.id}`, { method: "DELETE" });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "No pudimos eliminar a la persona.");
+      setGuests((current) => current.filter((item) => item.id !== guest.id));
+      setEditingId((current) => current === guest.id ? null : current);
+      setComposerId((current) => current === guest.id ? null : current);
+      setStatus(`${guest.name} fue eliminado de la lista.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "No pudimos eliminar a la persona.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const resetFilters = () => setFilters({ q: "", invitation: "", sent: "", opened: "" });
 
   return <section className="admin-section whatsapp-guests">
@@ -121,7 +139,8 @@ export function WhatsappGuestList({ initialGuests, origin, defaultMessage }: { i
         return <tr key={guest.id}><td data-label="Invitado"><strong>{guest.name}</strong><span>{guest.phoneNumber || "Sin teléfono"}</span></td><td data-label="Invitación">{guest.saturdayOnly ? "Solo sábado" : "Fin de semana"}</td><td data-label="Estado"><div className="whatsapp-guest-statuses"><span className={guest.whatsappSentAt ? "status-badge status-badge--sent" : "status-badge"}>{guest.whatsappSentAt ? "Enviado" : "Pendiente"}</span><small>{guest.whatsappSentAt ? formatTimestamp(guest.whatsappSentAt) : "Aún no se abrió WhatsApp"}</small><span className={guest.invitationOpenedAt ? "status-badge status-badge--yes" : "status-badge"}>{guest.invitationOpenedAt ? "Enlace abierto" : "Sin abrir"}</span></div></td><td data-label="Acciones"><div className="guest-invitation-actions">
           {guest.phoneNumber && <button type="button" className="admin-button admin-button--primary" disabled={isSaving} onClick={() => openWhatsapp(guest, message)}>{guest.whatsappSentAt ? "REENVIAR POR WHATSAPP" : "ENVIAR POR WHATSAPP"}</button>}
           {guest.phoneNumber && <button type="button" className="admin-button admin-button--secondary" onClick={() => openComposer(guest)}>ENVIAR CON MENSAJE PERSONALIZADO</button>}
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => { setEditingId(editingId === guest.id ? null : guest.id); setComposerId(null); }}>EDITAR</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={isSaving} onClick={() => { setEditingId(editingId === guest.id ? null : guest.id); setComposerId(null); }}>EDITAR</button>
+          <button type="button" className="admin-button admin-button--danger" disabled={isSaving} onClick={() => void deleteGuest(guest)}>ELIMINAR</button>
           <div className="guest-invitation-actions__links"><CopyButton label="OBTENER ENLACE" value={link} /><CopyButton label="LINK FIN DE SEMANA" value={invitationUrl(origin, guest.token, false)} /><CopyButton label="LINK SÁBADO" value={invitationUrl(origin, guest.token, true)} /></div>
           {composerId === guest.id && <div className="whatsapp-message-composer"><label htmlFor={`message-${guest.id}`}>Mensaje para {guest.name}</label><textarea id={`message-${guest.id}`} value={draftMessage} onChange={(event) => setDraftMessage(event.target.value)} rows={7} /><p>Este mensaje se abre listo para enviar en WhatsApp. Puedes ajustarlo sin cambiar los datos guardados.</p><div><button type="button" className="admin-button admin-button--primary" disabled={isSaving || !draftMessage.trim()} onClick={() => openWhatsapp(guest, draftMessage)}>ABRIR WHATSAPP</button><button type="button" className="admin-button admin-button--secondary" onClick={() => setComposerId(null)}>CANCELAR</button></div></div>}
           {editingId === guest.id && <form className="whatsapp-guest-edit" onSubmit={(event) => { event.preventDefault(); void saveGuest(event.currentTarget, guest); }}><div className="admin-field"><label htmlFor={`guest-name-${guest.id}`}>Nombre</label><input id={`guest-name-${guest.id}`} name="name" defaultValue={guest.name} required maxLength={150} /></div><div className="admin-field"><label htmlFor={`guest-phone-${guest.id}`}>Teléfono</label><input id={`guest-phone-${guest.id}`} name="phoneNumber" defaultValue={guest.phoneNumber || ""} inputMode="tel" placeholder="+59170000000" maxLength={24} /></div><label className="admin-toggle"><input name="saturdayOnly" type="checkbox" defaultChecked={guest.saturdayOnly} /><span>Solo sábado</span></label><div className="admin-field whatsapp-guest-edit__message"><label htmlFor={`guest-custom-message-${guest.id}`}>Mensaje guardado <em>opcional</em></label><textarea id={`guest-custom-message-${guest.id}`} name="customMessage" defaultValue={guest.customMessage || ""} rows={5} placeholder="Usa {name} y {link}, o escribe el texto completo." maxLength={2000} /></div><div className="admin-form-actions"><button type="submit" className="admin-button admin-button--primary" disabled={isSaving}>{isSaving ? "GUARDANDO…" : "GUARDAR CAMBIOS"}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => setEditingId(null)}>CANCELAR</button></div></form>}
