@@ -61,7 +61,7 @@ function toConfirmation(values: FormValues): Confirmation {
   };
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "" }: { settings: SiteSettings; events: Event[]; endpoint?: string; initialFullName?: string }) {
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken }: { settings: SiteSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string }) {
   const [values, setValues] = useState(() => ({ ...initialValues, fullName: initialFullName }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, honeypot: "" }),
+        body: JSON.stringify({ ...values, honeypot: "", invitationToken }),
       });
       const payload = await response.json() as { confirmation?: Confirmation; errors?: Record<string, string>; message?: string };
       if (!response.ok) {

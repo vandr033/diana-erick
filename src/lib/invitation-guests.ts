@@ -1,8 +1,8 @@
 import "server-only";
 
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { db } from "@/src/db/client";
-import { invitationGuests, type InvitationGuest } from "@/src/db/schema";
+import { invitationGuests, rsvpResponses, type InvitationGuest } from "@/src/db/schema";
 import { newId, newToken } from "@/src/lib/utils";
 import type { GuestImportRecord } from "@/src/lib/guest-import";
 
@@ -70,6 +70,16 @@ export async function markWhatsappSent(id: string) {
 }
 
 export async function deleteInvitationGuest(id: string) {
+  const guest = await db.select({ id: invitationGuests.id, name: invitationGuests.name }).from(invitationGuests).where(eq(invitationGuests.id, id)).limit(1);
+  if (!guest[0]) return false;
+  await db.delete(rsvpResponses).where(or(
+    eq(rsvpResponses.invitationGuestId, id),
+    and(
+      isNull(rsvpResponses.invitationGuestId),
+      eq(rsvpResponses.source, "public"),
+      sql`lower(trim(${rsvpResponses.fullName})) = lower(trim(${guest[0].name}))`,
+    ),
+  ));
   const deleted = await db.delete(invitationGuests).where(eq(invitationGuests.id, id)).returning({ id: invitationGuests.id });
   return Boolean(deleted[0]);
 }

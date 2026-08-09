@@ -9,5 +9,5 @@ export default async function PersonalInvitationPage({ params }: { params: Promi
   const { token } = await params;
   const guest = await getInvitationGuest(token);
   if (!guest) notFound();
-  return <><InvitationOpenTracker token={token} /><InvitationV2Page initialName={guest.name} /></>;
+  return <><InvitationOpenTracker token={token} /><InvitationV2Page initialName={guest.name} invitationToken={token} /></>;
 }

@@ -23,6 +23,10 @@ export const defaultSettings: SiteSettings = {
   metaDescription: "Confirma tu asistencia a la boda de Diana y Erick.",
   rsvpEnabled: true,
   rsvpClosedMessage: "Las confirmaciones se encuentran cerradas. Gracias por acompañarnos.",
+  hotelName: "Hotel recomendado",
+  hotelLocationUrl: "https://maps.google.com",
+  hotelWebsiteUrl: "https://example.com",
+  transportMessage: "Para su comodidad, habrá transporte desde {hotel} hacia {eventos}. Si se hospedan en otro lugar, les pedimos coordinar su traslado a {hotel} o llegar directamente al lugar de cada evento.",
   defaultWhatsappMessage: "Hola {name}, nos encantaría que nos acompañes en nuestra boda.\n\nPuedes ver tu invitación y confirmar tu asistencia aquí:\n{link}",
   updatedAt: new Date(0),
 };

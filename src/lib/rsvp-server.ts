@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/src/db/client";
 import { rsvpResponses } from "@/src/db/schema";
+import { getInvitationGuest } from "@/src/lib/invitation-guests";
 import { rsvpSchema } from "@/src/lib/validation";
 import { newId } from "@/src/lib/utils";
 
@@ -17,6 +18,7 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
       }
       return NextResponse.json({ message: "Revisa los campos marcados.", errors }, { status: 400 });
     }
+    const invitationGuest = typeof body.invitationToken === "string" ? await getInvitationGuest(body.invitationToken) : null;
     const now = new Date();
     const attendance = {
       attendsFriday: scope === "saturday" ? "no" as const : parsed.data.attendsFriday,
@@ -24,7 +26,7 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
       attendsSunday: scope === "saturday" ? "no" as const : parsed.data.attendsSunday,
     };
     const comment = parsed.data.comment?.trim() || null;
-    await db.insert(rsvpResponses).values({ id: newId(), fullName: parsed.data.fullName, ...attendance, comment, source: "public", submittedAt: now, updatedAt: now });
+    await db.insert(rsvpResponses).values({ id: newId(), fullName: parsed.data.fullName, invitationGuestId: invitationGuest?.id ?? null, ...attendance, comment, source: "public", submittedAt: now, updatedAt: now });
     return NextResponse.json({ confirmation: { ...parsed.data, ...attendance, comment } }, { status: 201 });
   } catch (error) {
     console.error("Error al guardar RSVP", error instanceof Error ? error.message : error);

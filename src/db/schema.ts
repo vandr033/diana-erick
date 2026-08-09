@@ -47,6 +47,10 @@ export const siteSettings = sqliteTable("site_settings", {
   metaDescription: text("meta_description").notNull(),
   rsvpEnabled: integer("rsvp_enabled", { mode: "boolean" }).notNull().default(true),
   rsvpClosedMessage: text("rsvp_closed_message").notNull(),
+  hotelName: text("hotel_name").notNull().default("Hotel recomendado"),
+  hotelLocationUrl: text("hotel_location_url").notNull().default("https://maps.google.com"),
+  hotelWebsiteUrl: text("hotel_website_url").notNull().default("https://example.com"),
+  transportMessage: text("transport_message").notNull().default("Para su comodidad, habrá transporte desde {hotel} hacia {eventos}. Si se hospedan en otro lugar, les pedimos coordinar su traslado a {hotel} o llegar directamente al lugar de cada evento."),
   defaultWhatsappMessage: text("default_whatsapp_message").notNull().default("Hola {name}, nos encantaría que nos acompañes en nuestra boda.\n\nPuedes ver tu invitación y confirmar tu asistencia aquí:\n{link}"),
   updatedAt: timestamp("updated_at"),
 });
@@ -84,6 +88,7 @@ export const rsvpResponses = sqliteTable(
   {
     id: text("id").primaryKey(),
     fullName: text("full_name").notNull(),
+    invitationGuestId: text("invitation_guest_id"),
     attendsFriday: text("attends_friday", { enum: attendanceValues }).notNull(),
     attendsSaturday: text("attends_saturday", { enum: attendanceValues }).notNull(),
     attendsSunday: text("attends_sunday", { enum: attendanceValues }).notNull(),
@@ -94,6 +99,7 @@ export const rsvpResponses = sqliteTable(
   },
   (table) => [
     index("rsvp_full_name_idx").on(table.fullName),
+    index("rsvp_invitation_guest_idx").on(table.invitationGuestId),
     index("rsvp_submitted_at_idx").on(table.submittedAt),
     index("rsvp_friday_idx").on(table.attendsFriday),
     index("rsvp_saturday_idx").on(table.attendsSaturday),

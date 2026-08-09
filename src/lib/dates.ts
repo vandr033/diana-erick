@@ -23,6 +23,19 @@ export function formatDayMonth(value: string): string {
   return spanishShortDate.format(parseDate(value)).toLocaleUpperCase("es-BO");
 }
 
+export function formatEventSchedule(
+  date: string,
+  startTime: string | null,
+  endTime: string | null,
+): string {
+  const dayMonth = spanishShortDate.format(parseDate(date));
+  const start = startTime?.trim();
+  const end = endTime?.trim();
+
+  if (!start) return dayMonth;
+  return end ? `${dayMonth} ${start} - ${end}` : `${dayMonth} ${start}`;
+}
+
 export function formatDateTime(value: Date): string {
   return new Intl.DateTimeFormat("es-BO", {
     dateStyle: "medium",

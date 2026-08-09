@@ -1,5 +1,6 @@
 import { DeadlineSection } from "@/src/components/public/deadline-section";
 import { withInvitationEventArtwork } from "@/src/components/public/invitation-event-artwork";
+import { HospitalitySection } from "@/src/components/public/hospitality-section";
 import { ItinerarySection } from "@/src/components/public/itinerary-section";
 import { PublicFooter } from "@/src/components/public/public-footer";
 import { RsvpSection } from "@/src/components/public/rsvp-section";
@@ -8,7 +9,7 @@ import { formatDayMonth, formatLongDate } from "@/src/lib/dates";
 import { createInvitationContent } from "./invitation-content";
 import { InvitationExperience } from "./invitation-experience";
 
-export async function InvitationV2Page({ saturdayOnly = false, initialName }: { saturdayOnly?: boolean; initialName?: string }) {
+export async function InvitationV2Page({ saturdayOnly = false, initialName, invitationToken }: { saturdayOnly?: boolean; initialName?: string; invitationToken?: string }) {
   const [settings, allEvents] = await Promise.all([getSettings(), getEvents(true)]);
   const saturdayEvent = allEvents.find((event) => event.slug === "sabado");
   const visibleEvents = saturdayOnly && saturdayEvent ? [saturdayEvent] : allEvents;
@@ -25,7 +26,8 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName }: { 
   return (
     <InvitationExperience content={content}>
       <ItinerarySection events={invitationEvents} />
-      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} />
+      {!saturdayOnly && <HospitalitySection settings={settings} />}
+      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken} />
       <DeadlineSection settings={settings} targetEvent={targetEvent} />
       <PublicFooter settings={settings} />
     </InvitationExperience>

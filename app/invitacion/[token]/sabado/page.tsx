@@ -19,5 +19,5 @@ export default async function PersonalSaturdayInvitationPage({ params }: { param
   const { token } = await params;
   const guest = await getInvitationGuest(token);
   if (!guest) notFound();
-  return <><InvitationOpenTracker token={token} /><InvitationV2Page saturdayOnly initialName={guest.name} /></>;
+  return <><InvitationOpenTracker token={token} /><InvitationV2Page saturdayOnly initialName={guest.name} invitationToken={token} /></>;
 }

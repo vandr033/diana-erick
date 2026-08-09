@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Event } from "@/src/db/schema";
-import { formatDayMonth } from "@/src/lib/dates";
+import { formatEventSchedule } from "@/src/lib/dates";
 import { EventDetailsDialog } from "./event-details-dialog";
 
 export function EventColumn({ event }: { event: Event }) {
@@ -43,7 +43,9 @@ export function EventColumn({ event }: { event: Event }) {
     <article className={`event-column event-column--${event.slug}`}>
       {!isSaturday && icon}
       <p className="event-column__title">{event.title}</p>
-      <p className="event-column__date">{formatDayMonth(event.date)}</p>
+      <p className="event-column__date">
+        {formatEventSchedule(event.date, event.startTime, event.endTime)}
+      </p>
       <p className="event-column__subtitle">{event.subtitle}</p>
       {isSaturday && icon}
       <div className="event-column__dress">
