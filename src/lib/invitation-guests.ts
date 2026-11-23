@@ -25,6 +25,7 @@ export async function getSaveTheDateResponse(id: string) {
     fullName: rsvpResponses.fullName,
     phoneNumber: invitationGuests.phoneNumber,
     saturdayOnly: invitationGuests.saturdayOnly,
+    sourceGuestId: invitationGuests.id,
   }).from(rsvpResponses)
     .leftJoin(invitationGuests, eq(rsvpResponses.invitationGuestId, invitationGuests.id))
     .where(and(eq(rsvpResponses.id, id), eq(rsvpResponses.phase, "save-the-date")))
@@ -32,14 +33,17 @@ export async function getSaveTheDateResponse(id: string) {
   return result ?? null;
 }
 
-export async function createManualInvitationGuest(input: { name: string; phoneNumber: string | null; saturdayOnly: boolean; phase: InvitationPhase; sourceResponseId?: string; companions?: string[] }) {
+export async function createManualInvitationGuest(input: { name: string; phoneNumber: string | null; saturdayOnly: boolean; phase: InvitationPhase; sourceResponseId?: string; sourceGuestId?: string | null; companions?: string[] }) {
   const [guest] = await db.insert(invitationGuests).values({
     ...input, id: newId(), token: newToken(),
   }).onConflictDoNothing().returning();
   if (guest) return { guest, duplicatePhone: false };
-  if (input.sourceResponseId) {
+  if (input.sourceResponseId || input.sourceGuestId) {
     const [existing] = await db.select().from(invitationGuests)
-      .where(eq(invitationGuests.sourceResponseId, input.sourceResponseId)).limit(1);
+      .where(or(
+        input.sourceResponseId ? eq(invitationGuests.sourceResponseId, input.sourceResponseId) : undefined,
+        input.sourceGuestId ? eq(invitationGuests.sourceGuestId, input.sourceGuestId) : undefined,
+      )).limit(1);
     if (existing) return { guest: existing, duplicatePhone: false };
   }
   return { guest: null, duplicatePhone: true };

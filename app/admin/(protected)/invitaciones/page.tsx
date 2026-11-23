@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GeneralInvitationLinks } from "@/src/components/admin/invitation-link-actions";
 import { ManualInvitationGuestForm } from "@/src/components/admin/manual-invitation-guest-form";
 import { WhatsappGuestList } from "@/src/components/admin/whatsapp-guest-list";
+import { WeddingImport } from "@/src/components/admin/wedding-import";
 import { getInvitationGuests, getSettings } from "@/src/db/queries";
 import { currentOrigin } from "@/src/lib/current-origin";
 import { getSaveTheDateResponse } from "@/src/lib/invitation-guests";
@@ -32,6 +33,7 @@ export default async function FinalInvitationsPage({ searchParams }: { searchPar
     {respuesta && !source && <p className="admin-error" role="alert">No encontramos la respuesta del Save the Date.</p>}
     <ManualInvitationGuestForm key={source?.id ?? "new"} origin={origin} phase="final" source={source} />
     {source && <Link className="admin-text-link" href={{ pathname: "/admin/invitaciones" }}>Invitar a otra persona</Link>}
+    <WeddingImport />
     <GeneralInvitationLinks origin={origin} phase="final" />
     {rows.length > 0
       ? <WhatsappGuestList key={rows.map((row) => row.id).join(",")} initialGuests={rows} origin={origin} defaultMessage={settings.defaultWhatsappMessage} phase="final" />

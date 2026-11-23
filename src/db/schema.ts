@@ -123,6 +123,7 @@ export const invitationGuests = sqliteTable(
     token: text("token").notNull(),
     phase: text("phase", { enum: invitationPhases }).notNull().default("save-the-date"),
     sourceResponseId: text("source_response_id"),
+    sourceGuestId: text("source_guest_id"),
     companions: text("companions", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
     name: text("name").notNull(),
     phoneNumber: text("phone_number"),
@@ -137,6 +138,7 @@ export const invitationGuests = sqliteTable(
     uniqueIndex("invitation_guests_token_idx").on(table.token),
     uniqueIndex("invitation_guests_phase_phone_idx").on(table.phase, table.phoneNumber),
     uniqueIndex("invitation_guests_source_response_idx").on(table.sourceResponseId),
+    uniqueIndex("invitation_guests_source_guest_idx").on(table.sourceGuestId),
     index("invitation_guests_opened_idx").on(table.invitationOpenedAt),
   ],
 );

@@ -5,7 +5,7 @@ import { maxCompanions } from "@/src/lib/invitation-party";
 const requiredText = (message: string, max = 500) =>
   z.string().trim().min(1, message).max(max, `No puede superar los ${max} caracteres.`);
 
-const companionNames = z.array(z.string().trim().max(150, "El nombre de un acompañante no puede superar los 150 caracteres."))
+export const companionNames = z.array(z.string().trim().max(150, "El nombre de un acompañante no puede superar los 150 caracteres."))
   .max(maxCompanions, `Puedes agregar hasta ${maxCompanions} acompañantes.`);
 export const saturdayAttendanceSchema = z.array(z.enum(["yes", "no"])).max(maxCompanions + 1);
 

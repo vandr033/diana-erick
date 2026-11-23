@@ -92,6 +92,13 @@
       "when": 1795396462751,
       "tag": "0012_magical_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1795399885978,
+      "tag": "0013_orange_nekra",
+      "breakpoints": true
     }
   ]
 }

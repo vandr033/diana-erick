@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     saturdayOnly: parsed.data.saturdayOnly,
     phase,
     sourceResponseId,
+    sourceGuestId: source?.sourceGuestId,
     companions: phase === "final" ? parsed.data.companions : undefined,
   });
   if (result.duplicatePhone) return NextResponse.json({ message: "Ya existe una invitación con ese teléfono." }, { status: 409 });
