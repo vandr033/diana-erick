@@ -78,6 +78,20 @@
       "when": 1786297001107,
       "tag": "0010_silky_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1795395514539,
+      "tag": "0011_clean_scrambler",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1795396462751,
+      "tag": "0012_magical_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

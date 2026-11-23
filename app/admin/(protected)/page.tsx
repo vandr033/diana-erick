@@ -23,7 +23,7 @@ export default async function AdminDashboardPage() {
   const stats = await getDashboardStats();
   return (
     <div className="admin-page">
-      <div className="admin-page-heading"><div><p className="admin-eyebrow">Resumen</p><h1>Hola, aquí está todo</h1><p className="admin-subtitle">Estas cifras representan respuestas enviadas, no necesariamente personas.</p></div><div className="admin-actions"><Link className="admin-button admin-button--primary" href={"/admin/responses/new" as never}>Agregar respuesta</Link><Link className="admin-button admin-button--secondary" href={"/api/admin/responses/export" as never}>Exportar Excel</Link></div></div>
+      <div className="admin-page-heading"><div><p className="admin-eyebrow">Resumen</p><h1>Hola, aquí está todo</h1><p className="admin-subtitle">Resumen de las respuestas al Save the Date.</p></div><div className="admin-actions"><Link className="admin-button admin-button--primary" href={"/admin/responses/new" as never}>Agregar respuesta</Link><Link className="admin-button admin-button--secondary" href={"/api/admin/responses/export" as never}>Exportar Excel</Link></div></div>
       <section className="admin-stats-grid" aria-label="Resumen de respuestas">
         {cards.map(([key, label]) => <div className="admin-stat" key={key}><span>{label}</span><strong>{stats[key]}</strong></div>)}
       </section>

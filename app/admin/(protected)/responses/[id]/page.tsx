@@ -11,6 +11,7 @@ export default async function ResponseDetailPage({ params }: { params: Promise<{
   const rows = await db.select().from(rsvpResponses).where(eq(rsvpResponses.id, id)).limit(1);
   const response = rows[0];
   if (!response) notFound();
-  return <div className="admin-page admin-page--narrow"><div className="admin-page-heading"><div><Link className="admin-back-link" href={"/admin/responses" as never}>← Respuestas</Link><p className="admin-eyebrow">Detalle de respuesta</p><h1>{response.fullName}</h1><p className="admin-subtitle">Enviada el {formatDateTime(response.submittedAt)} · Origen: {response.source === "admin" ? "Administrador" : "Invitado"}</p></div><DeleteResponseButton id={response.id} /></div><section className="admin-section"><ResponseForm response={response} /></section></div>;
+  const isFinal = response.phase === "final";
+  return <div className="admin-page admin-page--narrow"><div className="admin-page-heading"><div><Link className="admin-back-link" href={{ pathname: "/admin/responses", query: isFinal ? { phase: "final" } : undefined }}>← Respuestas</Link><p className="admin-eyebrow">{isFinal ? "Invitación final" : "Save the Date"}</p><h1>{response.fullName}</h1><p className="admin-subtitle">Enviada el {formatDateTime(response.submittedAt)} · Origen: {response.source === "admin" ? "Administrador" : "Invitado"}</p></div><div className="admin-actions">{!isFinal && <Link className="admin-button admin-button--primary" href={{ pathname: "/admin/invitaciones", query: { respuesta: id } }}>Invitar a la boda</Link>}<DeleteResponseButton id={response.id} isFinal={isFinal} /></div></div><section className="admin-section"><ResponseForm response={response} /></section></div>;
 }
 import Link from "next/link";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { InvitationPhase } from "@/src/db/schema";
 import { invitationUrl, renderInvitationMessage } from "@/src/lib/invitation-links";
 
 export function CopyButton({ label, value }: { label: string; value: string }) {
@@ -13,11 +14,12 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
   return <button type="button" className="admin-button admin-button--secondary invitation-link-button" onClick={() => void copy()}>{copied ? "COPIADO" : label}</button>;
 }
 
-export function GeneralInvitationLinks({ origin }: { origin: string }) {
+export function GeneralInvitationLinks({ origin, phase = "save-the-date" }: { origin: string; phase?: InvitationPhase }) {
+  const base = phase === "final" ? `${origin}/boda` : origin;
   return <section className="admin-section invitation-links">
     <div className="admin-section-heading"><div><p className="admin-eyebrow">Enlaces públicos</p><h2>Obtener enlace</h2></div></div>
     <p className="admin-note">Estos enlaces no incluyen un nombre. Úsalos cuando quieras compartir la invitación abierta.</p>
-    <div className="invitation-links__actions"><CopyButton label="COPIAR FIN DE SEMANA" value={`${origin}/`} /><CopyButton label="COPIAR SOLO SÁBADO" value={`${origin}/sabado`} /></div>
+    <div className="invitation-links__actions"><CopyButton label="COPIAR FIN DE SEMANA" value={phase === "final" ? base : `${base}/`} /><CopyButton label="COPIAR SOLO SÁBADO" value={`${base}/sabado`} /></div>
   </section>;
 }
 

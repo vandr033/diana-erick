@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { attendanceValues } from "@/src/db/schema";
+import { maxCompanions } from "@/src/lib/invitation-party";
 
 const requiredText = (message: string, max = 500) =>
   z.string().trim().min(1, message).max(max, `No puede superar los ${max} caracteres.`);
+
+const companionNames = z.array(z.string().trim().max(150, "El nombre de un acompañante no puede superar los 150 caracteres."))
+  .max(maxCompanions, `Puedes agregar hasta ${maxCompanions} acompañantes.`);
+export const saturdayAttendanceSchema = z.array(z.enum(["yes", "no"])).max(maxCompanions + 1);
 
 export const rsvpSchema = z.object({
   fullName: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(150, "El nombre no puede superar los 150 caracteres."),
@@ -15,6 +20,7 @@ export const rsvpSchema = z.object({
 
 export const responseAdminSchema = rsvpSchema.omit({ honeypot: true }).extend({
   source: z.enum(["public", "admin"]).optional(),
+  saturdayAttendance: saturdayAttendanceSchema.optional(),
 });
 
 export const manualInvitationGuestSchema = z.object({
@@ -22,6 +28,8 @@ export const manualInvitationGuestSchema = z.object({
   prefix: z.string().trim().max(8, "El prefijo no es válido.").optional().default(""),
   phoneNumber: z.string().trim().max(24, "El número no es válido.").optional().default(""),
   saturdayOnly: z.coerce.boolean().default(false),
+  sourceResponseId: z.string().uuid().optional(),
+  companions: companionNames.optional(),
 }).superRefine((value, context) => {
   const prefix = value.prefix.replace(/\D/g, "");
   const phone = value.phoneNumber.replace(/\D/g, "");
@@ -37,6 +45,7 @@ export const invitationGuestUpdateSchema = z.object({
   phoneNumber: z.string().trim().max(24, "El número no es válido.").nullable().optional(),
   saturdayOnly: z.coerce.boolean().default(false),
   customMessage: z.string().trim().max(2000, "El mensaje no puede superar los 2.000 caracteres.").nullable().optional(),
+  companions: companionNames.optional(),
 }).superRefine((value, context) => {
   if (value.phoneNumber && !/^\+\d{8,15}$/.test(value.phoneNumber.replace(/\D/g, "").replace(/^/, "+"))) {
     context.addIssue({ code: "custom", path: ["phoneNumber"], message: "Usa un teléfono internacional válido, por ejemplo +59170000000." });
@@ -66,6 +75,7 @@ export const contentSchema = z.object({
   hotelWebsiteUrl: z.string().url("La URL del sitio web no es válida.").refine((value) => value.startsWith("http://") || value.startsWith("https://"), "La URL debe comenzar con http o https."),
   transportMessage: requiredText("Ingresa el mensaje de transporte.", 600),
   defaultWhatsappMessage: requiredText("Ingresa el mensaje predeterminado de WhatsApp.", 2000),
+  finalInvitationDetails: z.string().trim().max(5000, "Los detalles no pueden superar los 5.000 caracteres.").optional(),
 });
 
 export const settingsSchema = z.object({

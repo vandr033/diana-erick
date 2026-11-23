@@ -1,17 +1,9 @@
-import { headers } from "next/headers";
+import { currentOrigin } from "@/src/lib/current-origin";
 import { getInvitationGuests, getSettings } from "@/src/db/queries";
 import { GeneralInvitationLinks } from "@/src/components/admin/invitation-link-actions";
 import { ManualInvitationGuestForm } from "@/src/components/admin/manual-invitation-guest-form";
 import { WhatsappImportForm } from "@/src/components/admin/whatsapp-import-form";
 import { WhatsappGuestList } from "@/src/components/admin/whatsapp-guest-list";
-
-async function currentOrigin() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000";
-  const protocol = requestHeaders.get("x-forwarded-proto") || "https";
-  return `${protocol}://${host}`;
-}
 
 export default async function WhatsappPage() {
   const [{ rows, stats }, settings, origin] = await Promise.all([getInvitationGuests(), getSettings(), currentOrigin()]);

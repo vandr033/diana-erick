@@ -6,10 +6,11 @@ import { invitationGuestUpdateSchema } from "@/src/lib/validation";
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await requireAdminApi()) return NextResponse.json({ message: "No autorizado." }, { status: 401 });
   const { id } = await params;
+  const phase = new URL(request.url).searchParams.get("phase") === "final" ? "final" : "save-the-date";
   const body = await request.json().catch(() => null) as { action?: string } | null;
 
   if (body?.action === "mark-sent") {
-    const guest = await markWhatsappSent(id);
+    const guest = await markWhatsappSent(id, phase);
     return guest ? NextResponse.json({ guest }) : NextResponse.json({ message: "No encontramos a ese invitado." }, { status: 404 });
   }
 
@@ -20,14 +21,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     ...parsed.data,
     phoneNumber: phoneDigits ? `+${phoneDigits}` : null,
     customMessage: parsed.data.customMessage || null,
-  });
+    companions: phase === "final" ? parsed.data.companions : undefined,
+  }, phase);
   if (result.duplicatePhone) return NextResponse.json({ message: "Ya existe una invitación con ese teléfono." }, { status: 409 });
   return result.guest ? NextResponse.json({ guest: result.guest }) : NextResponse.json({ message: "No encontramos a ese invitado." }, { status: 404 });
 }
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await requireAdminApi()) return NextResponse.json({ message: "No autorizado." }, { status: 401 });
   const { id } = await params;
-  const deleted = await deleteInvitationGuest(id);
+  const phase = new URL(request.url).searchParams.get("phase") === "final" ? "final" : "save-the-date";
+  const deleted = await deleteInvitationGuest(id, phase);
   return deleted ? NextResponse.json({ ok: true }) : NextResponse.json({ message: "No encontramos a ese invitado." }, { status: 404 });
 }

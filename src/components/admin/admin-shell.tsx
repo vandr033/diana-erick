@@ -6,6 +6,7 @@ const links = [
   ["Resumen", "/admin"],
   ["Respuestas", "/admin/responses"],
   ["WhatsApp", "/admin/whatsapp"],
+  ["Invitación final", "/admin/invitaciones"],
   ["Contenido", "/admin/content"],
   ["Eventos", "/admin/events"],
   ["Configuración", "/admin/settings"],

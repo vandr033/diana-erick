@@ -6,6 +6,7 @@ import { responseFilterConditions } from "@/src/db/queries";
 import { rsvpResponses, type Attendance } from "@/src/db/schema";
 import { requireAdminApi } from "@/src/lib/auth";
 import { formatDateTime } from "@/src/lib/dates";
+import { attendanceCount, companionLabel } from "@/src/lib/invitation-party";
 
 export const runtime = "nodejs";
 
@@ -13,11 +14,34 @@ export async function GET(request: Request) {
   if (!await requireAdminApi()) return NextResponse.json({ message: "No autorizado." }, { status: 401 });
   try {
     const url = new URL(request.url);
-    const filters = { q: url.searchParams.get("q") || "", event: url.searchParams.get("event") || "", attendance: url.searchParams.get("attendance") || "", dateFrom: url.searchParams.get("dateFrom") || "", dateTo: url.searchParams.get("dateTo") || "" };
+    const filters = { phase: url.searchParams.get("phase") || "", q: url.searchParams.get("q") || "", event: url.searchParams.get("event") || "", attendance: url.searchParams.get("attendance") || "", dateFrom: url.searchParams.get("dateFrom") || "", dateTo: url.searchParams.get("dateTo") || "" };
     const conditions = responseFilterConditions(filters);
     const rows = await db.select().from(rsvpResponses).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(rsvpResponses.submittedAt));
     const attendanceLabel: Record<Attendance, string> = { yes: "Sí", maybe: "Tal vez", no: "No" };
-    const responseRows = rows.map((row) => ({ "Nombre completo": row.fullName, "Viernes 9 de abril": attendanceLabel[row.attendsFriday], "Sábado 10 de abril": attendanceLabel[row.attendsSaturday], "Domingo 11 de abril": attendanceLabel[row.attendsSunday], "Comentario": row.comment || "", "Fecha de respuesta": formatDateTime(row.submittedAt), "Última actualización": formatDateTime(row.updatedAt), "Origen": row.source === "admin" ? "Administrador" : "Invitado" }));
+    const isFinal = filters.phase === "final";
+    const responseRows = rows.map((row) => {
+      const companions = row.party?.companions.map(companionLabel) ?? [];
+      return {
+        "Nombre completo": row.fullName,
+        "Viernes 9 de abril": attendanceLabel[row.attendsFriday],
+        "Sábado 10 de abril": attendanceLabel[row.attendsSaturday],
+        "Domingo 11 de abril": attendanceLabel[row.attendsSunday],
+        "Comentario": row.comment || "",
+        "Fecha de respuesta": formatDateTime(row.submittedAt),
+        "Última actualización": formatDateTime(row.updatedAt),
+        "Origen": row.source === "admin" ? "Administrador" : "Invitado",
+        ...(isFinal && {
+          "Acompañantes": companions.join(", "),
+          "Asistencia individual del sábado": row.party?.saturdayAttendance?.map((choice, index) => {
+            const name = index === 0 ? row.fullName : companions[index - 1];
+            return `${name} (${attendanceLabel[choice]})`;
+          }).join(", ") ?? "",
+          "Personas confirmadas el viernes": attendanceCount(row, "attendsFriday"),
+          "Personas confirmadas el sábado": attendanceCount(row, "attendsSaturday"),
+          "Personas confirmadas el domingo": attendanceCount(row, "attendsSunday"),
+        }),
+      };
+    });
     const confirmations = rows.filter((row) => row.attendsFriday === "yes" || row.attendsSaturday === "yes" || row.attendsSunday === "yes").length;
     const summaryRows = [
       { Métrica: "Total de respuestas", Valor: rows.length },
@@ -32,13 +56,21 @@ export async function GET(request: Request) {
       { Métrica: "Asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "yes").length },
       { Métrica: "Tal vez asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "maybe").length },
       { Métrica: "No asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "no").length },
+      ...(isFinal ? ([
+        ["Personas confirmadas el viernes", "attendsFriday"],
+        ["Personas confirmadas el sábado", "attendsSaturday"],
+        ["Personas confirmadas el domingo", "attendsSunday"],
+      ] as const).map(([Métrica, day]) => ({
+        Métrica, Valor: rows.reduce((total, row) => total + attendanceCount(row, day), 0),
+      })) : []),
       { Métrica: "Fecha de generación", Valor: formatDateTime(new Date()) },
-      { Métrica: "Filtros aplicados", Valor: Object.values(filters).some(Boolean) ? "Sí" : "No" },
+      { Métrica: "Filtros aplicados", Valor: [filters.q, filters.event, filters.attendance, filters.dateFrom, filters.dateTo].some(Boolean) ? "Sí" : "No" },
     ];
     const workbook = XLSX.utils.book_new();
     const responsesSheet = XLSX.utils.json_to_sheet(responseRows);
     responsesSheet["!cols"] = [{ wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 42 }, { wch: 24 }, { wch: 24 }, { wch: 16 }];
-    responsesSheet["!autofilter"] = { ref: `A1:H${Math.max(responseRows.length + 1, 2)}` };
+    if (isFinal) responsesSheet["!cols"].push({ wch: 35 }, { wch: 52 }, { wch: 30 }, { wch: 30 }, { wch: 30 });
+    responsesSheet["!autofilter"] = { ref: `A1:${isFinal ? "M" : "H"}${Math.max(responseRows.length + 1, 2)}` };
     responsesSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
     XLSX.utils.book_append_sheet(workbook, responsesSheet, "RESPUESTAS");
     const summarySheet = XLSX.utils.json_to_sheet(summaryRows);

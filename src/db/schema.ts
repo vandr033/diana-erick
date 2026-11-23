@@ -52,10 +52,17 @@ export const siteSettings = sqliteTable("site_settings", {
   hotelWebsiteUrl: text("hotel_website_url").notNull().default("https://example.com"),
   transportMessage: text("transport_message").notNull().default("Para su comodidad, habrá transporte desde {hotel} hacia {eventos}. Si se hospedan en otro lugar, les pedimos coordinar su traslado a {hotel} o llegar directamente al lugar de cada evento."),
   defaultWhatsappMessage: text("default_whatsapp_message").notNull().default("Hola {name}, nos encantaría que nos acompañes en nuestra boda.\n\nPuedes ver tu invitación y confirmar tu asistencia aquí:\n{link}"),
+  finalInvitationDetails: text("final_invitation_details").notNull().default(""),
   updatedAt: timestamp("updated_at"),
 });
 
 export const attendanceValues = ["yes", "no", "maybe"] as const;
+export const invitationPhases = ["save-the-date", "final"] as const;
+export type InvitationPhase = (typeof invitationPhases)[number];
+export type PartyResponse = {
+  companions: string[];
+  saturdayAttendance?: ("yes" | "no")[];
+};
 
 export const events = sqliteTable(
   "events",
@@ -89,6 +96,8 @@ export const rsvpResponses = sqliteTable(
     id: text("id").primaryKey(),
     fullName: text("full_name").notNull(),
     invitationGuestId: text("invitation_guest_id"),
+    phase: text("phase", { enum: invitationPhases }).notNull().default("save-the-date"),
+    party: text("party", { mode: "json" }).$type<PartyResponse>(),
     attendsFriday: text("attends_friday", { enum: attendanceValues }).notNull(),
     attendsSaturday: text("attends_saturday", { enum: attendanceValues }).notNull(),
     attendsSunday: text("attends_sunday", { enum: attendanceValues }).notNull(),
@@ -112,6 +121,9 @@ export const invitationGuests = sqliteTable(
   {
     id: text("id").primaryKey(),
     token: text("token").notNull(),
+    phase: text("phase", { enum: invitationPhases }).notNull().default("save-the-date"),
+    sourceResponseId: text("source_response_id"),
+    companions: text("companions", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
     name: text("name").notNull(),
     phoneNumber: text("phone_number"),
     saturdayOnly: integer("saturday_only", { mode: "boolean" }).notNull().default(false),
@@ -123,7 +135,8 @@ export const invitationGuests = sqliteTable(
   },
   (table) => [
     uniqueIndex("invitation_guests_token_idx").on(table.token),
-    uniqueIndex("invitation_guests_phone_number_idx").on(table.phoneNumber),
+    uniqueIndex("invitation_guests_phase_phone_idx").on(table.phase, table.phoneNumber),
+    uniqueIndex("invitation_guests_source_response_idx").on(table.sourceResponseId),
     index("invitation_guests_opened_idx").on(table.invitationOpenedAt),
   ],
 );

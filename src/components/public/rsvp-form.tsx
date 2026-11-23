@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Attendance, Event, SiteSettings } from "@/src/db/schema";
+import type { Attendance, Event, InvitationPhase, PartyResponse, SiteSettings } from "@/src/db/schema";
+import { companionLabel } from "@/src/lib/invitation-party";
 
 type Confirmation = {
   fullName: string;
@@ -9,7 +10,10 @@ type Confirmation = {
   attendsSaturday: Attendance;
   attendsSunday: Attendance;
   comment: string | null;
+  party?: PartyResponse | null;
 };
+
+type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel">;
 
 type FormValues = {
   fullName: string;
@@ -21,28 +25,28 @@ type FormValues = {
 
 const initialValues: FormValues = { fullName: "", attendsFriday: "", attendsSaturday: "", attendsSunday: "", comment: "" };
 
-const attendanceOptions: { value: Attendance; label: string }[] = [
-  { value: "yes", label: "Sí asistiré" },
-  { value: "maybe", label: "Tal vez" },
-  { value: "no", label: "No asistiré" },
-];
-
 const attendanceLabels: Record<Attendance, string> = {
   yes: "Sí asistiré",
   maybe: "Tal vez",
   no: "No asistiré",
 };
+const groupLabels = { yes: "Sí, vamos todos", no: "No vamos", maybe: "Tal vez" };
+const companionAttendanceLabels = { yes: "Sí asiste", no: "No asiste", maybe: "Tal vez" };
+const attendanceFieldByDay = { viernes: "attendsFriday", sabado: "attendsSaturday", domingo: "attendsSunday" } as const;
 
-function AttendanceField({ event, value, onChange, error }: { event: Event; value: Attendance | ""; onChange: (value: Attendance) => void; error?: string }) {
-  const fieldId = `attendance-${event.slug}`;
+function AttendanceField({ fieldId, title, subtitle, value, onChange, labels = attendanceLabels, allowMaybe = false, error }: {
+  fieldId: string; title: string; subtitle?: string; value: Attendance | ""; onChange: (value: Attendance) => void;
+  labels?: Record<Attendance, string>; allowMaybe?: boolean; error?: string;
+}) {
+  const choices: Attendance[] = allowMaybe ? ["yes", "maybe", "no"] : ["yes", "no"];
   return (
     <fieldset className="attendance-field">
-      <legend><span>{event.title}</span><small>{event.subtitle}</small></legend>
-      <div className="attendance-options">
-        {attendanceOptions.map((option) => (
-          <label className={`attendance-option ${value === option.value ? "is-selected" : ""}`} key={option.value}>
-            <input type="radio" name={fieldId} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)} />
-            <span>{option.label}</span>
+      <legend><span>{title}</span>{subtitle && <small>{subtitle}</small>}</legend>
+      <div className={`attendance-options${allowMaybe ? "" : " attendance-options--binary"}`}>
+        {choices.map((choice) => (
+          <label className={`attendance-option ${value === choice ? "is-selected" : ""}`} key={choice}>
+            <input type="radio" name={fieldId} value={choice} checked={value === choice} onChange={() => onChange(choice)} />
+            <span>{labels[choice]}</span>
           </label>
         ))}
       </div>
@@ -61,8 +65,14 @@ function toConfirmation(values: FormValues): Confirmation {
   };
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken }: { settings: SiteSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string }) {
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [] }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[] }) {
+  const isFinal = phase === "final";
+  const hasCompanions = isFinal && companions.length > 0;
+  const individualSaturday = hasCompanions && endpoint === "/api/rsvp/sabado" && events.some((event) => event.slug === "sabado");
+  const groupAttendance = hasCompanions && endpoint !== "/api/rsvp/sabado";
+  const companionNames = companions.map(companionLabel);
   const [values, setValues] = useState(() => ({ ...initialValues, fullName: initialFullName }));
+  const [saturdayAttendance, setSaturdayAttendance] = useState<(Attendance | "")[]>(() => Array(companions.length + 1).fill(""));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -80,7 +90,14 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, honeypot: "", invitationToken }),
+        body: JSON.stringify({
+          ...values,
+          honeypot: "",
+          invitationToken,
+          phase,
+          companions: hasCompanions ? companions : undefined,
+          saturdayAttendance: individualSaturday ? saturdayAttendance : undefined,
+        }),
       });
       const payload = await response.json() as { confirmation?: Confirmation; errors?: Record<string, string>; message?: string };
       if (!response.ok) {
@@ -98,7 +115,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
   };
 
   if (confirmation) {
-    const attendanceBySlug = { viernes: confirmation.attendsFriday, sabado: confirmation.attendsSaturday, domingo: confirmation.attendsSunday } as const;
+    const individual = confirmation.party?.saturdayAttendance;
     return (
       <div className="confirmation" aria-live="polite">
         <p className="eyebrow">Respuesta recibida</p>
@@ -106,7 +123,14 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         <p className="confirmation__message">{settings.confirmationMessage}</p>
         <dl className="confirmation__summary">
           <div><dt>Nombre</dt><dd>{confirmation.fullName}</dd></div>
-          {events.map((event) => <div key={event.id}><dt>{event.title}</dt><dd>{attendanceLabels[attendanceBySlug[event.slug as keyof typeof attendanceBySlug]]}</dd></div>)}
+          {confirmation.party && !individual && <div><dt>Acompañantes</dt><dd>{confirmation.party.companions.map(companionLabel).join(", ")}</dd></div>}
+          {individual ? individual.map((choice, index) => <div key={index}>
+            <dt>{index === 0 ? "Tú" : companionNames[index - 1]}</dt>
+            <dd>{index === 0 ? attendanceLabels[choice] : companionAttendanceLabels[choice]}</dd>
+          </div>) : events.map((event) => {
+            const field = attendanceFieldByDay[event.slug as keyof typeof attendanceFieldByDay] ?? "attendsSunday";
+            return <div key={event.id}><dt>{event.title}</dt><dd>{(groupAttendance ? groupLabels : attendanceLabels)[confirmation[field]]}</dd></div>;
+          })}
           {confirmation.comment && <div><dt>Comentario</dt><dd>{confirmation.comment}</dd></div>}
         </dl>
       </div>
@@ -120,8 +144,18 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         <input id="fullName" name="fullName" value={values.fullName} onChange={(event) => update("fullName", event.target.value)} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? "fullName-error" : undefined} autoComplete="name" />
         {errors.fullName && <p id="fullName-error" className="field-error">{errors.fullName}</p>}
       </div>
-      <p className="form-instruction">{settings.attendancePromptLabel}</p>
-      {events.map((event) => <AttendanceField key={event.id} event={event} value={values[event.slug === "viernes" ? "attendsFriday" : event.slug === "sabado" ? "attendsSaturday" : "attendsSunday"]} onChange={(value) => update(event.slug === "viernes" ? "attendsFriday" : event.slug === "sabado" ? "attendsSaturday" : "attendsSunday", value)} error={errors[event.slug === "viernes" ? "attendsFriday" : event.slug === "sabado" ? "attendsSaturday" : "attendsSunday"]} />)}
+      {groupAttendance && <p className="rsvp-companions">Acompañantes: {companionNames.join(", ")}</p>}
+      <p className="form-instruction">{individualSaturday ? "Indica quién asistirá el sábado." : groupAttendance ? "Confirma la asistencia de todo tu grupo para cada día." : settings.attendancePromptLabel}</p>
+      {individualSaturday ? ["Tú", ...companionNames].map((name, index) => (
+        <AttendanceField key={index} fieldId={`saturday-person-${index}`} title={name} value={saturdayAttendance[index]}
+          labels={index === 0 ? attendanceLabels : companionAttendanceLabels}
+          onChange={(choice) => setSaturdayAttendance((answers) => answers.map((answer, position) => position === index ? choice : answer))} />
+      )) : events.map((event) => {
+        const field = attendanceFieldByDay[event.slug as keyof typeof attendanceFieldByDay] ?? "attendsSunday";
+        return <AttendanceField key={event.id} fieldId={`attendance-${event.slug}`} title={event.title} subtitle={event.subtitle}
+          value={values[field]} onChange={(choice) => update(field, choice)} labels={groupAttendance ? groupLabels : attendanceLabels}
+          error={errors[field]} allowMaybe={!isFinal} />;
+      })}
       <div className="form-field">
         <label htmlFor="comment">{settings.commentLabel}</label>
         <textarea id="comment" name="comment" value={values.comment} onChange={(event) => update("comment", event.target.value)} maxLength={1000} rows={4} aria-invalid={Boolean(errors.comment)} />

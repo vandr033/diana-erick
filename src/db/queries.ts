@@ -1,6 +1,6 @@
-import { and, count, desc, eq, gte, lte, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "./client";
-import { events, invitationGuests, rsvpResponses, siteSettings } from "./schema";
+import { events, invitationGuests, rsvpResponses, siteSettings, type InvitationPhase } from "./schema";
 import { defaultEvents, defaultSettings } from "@/src/lib/defaults";
 
 function normalizeEventIconPath(event: typeof defaultEvents[number]) {
@@ -34,8 +34,9 @@ export function responseFilterConditions(filters: {
   attendance?: string;
   dateFrom?: string;
   dateTo?: string;
+  phase?: string;
 }) {
-  const conditions = [];
+  const conditions: (SQL | undefined)[] = [eq(rsvpResponses.phase, filters.phase === "final" ? "final" : "save-the-date")];
   if (filters.q) {
     const term = `%${filters.q.toLowerCase()}%`;
     conditions.push(sql`lower(${rsvpResponses.fullName}) like ${term}`);
@@ -51,7 +52,7 @@ export function responseFilterConditions(filters: {
   return conditions;
 }
 
-export async function getResponses(filters: { q?: string; event?: string; attendance?: string; dateFrom?: string; dateTo?: string }, page = 1, pageSize = 25) {
+export async function getResponses(filters: Parameters<typeof responseFilterConditions>[0], page = 1, pageSize = 25) {
   const conditions = responseFilterConditions(filters);
   const where = conditions.length ? and(...conditions) : undefined;
   try {
@@ -67,7 +68,7 @@ export async function getResponses(filters: { q?: string; event?: string; attend
 
 export async function getDashboardStats() {
   try {
-    const rows = await db.select().from(rsvpResponses).orderBy(desc(rsvpResponses.submittedAt));
+    const rows = await db.select().from(rsvpResponses).where(eq(rsvpResponses.phase, "save-the-date")).orderBy(desc(rsvpResponses.submittedAt));
     return {
       total: rows.length,
       confirmations: rows.filter((row) => row.attendsFriday === "yes" || row.attendsSaturday === "yes" || row.attendsSunday === "yes").length,
@@ -82,9 +83,9 @@ export async function getDashboardStats() {
   }
 }
 
-export async function getInvitationGuests() {
+export async function getInvitationGuests(phase: InvitationPhase = "save-the-date") {
   try {
-    const rows = await db.select().from(invitationGuests).orderBy(desc(invitationGuests.createdAt));
+    const rows = await db.select().from(invitationGuests).where(eq(invitationGuests.phase, phase)).orderBy(desc(invitationGuests.createdAt));
     return {
       rows,
       stats: {

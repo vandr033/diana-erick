@@ -5,14 +5,15 @@ import { ItinerarySection } from "@/src/components/public/itinerary-section";
 import { PublicFooter } from "@/src/components/public/public-footer";
 import { RsvpSection } from "@/src/components/public/rsvp-section";
 import { getEvents, getSettings } from "@/src/db/queries";
+import type { InvitationPhase } from "@/src/db/schema";
 import { formatDayMonth, formatLongDate } from "@/src/lib/dates";
 import { createInvitationContent } from "./invitation-content";
 import { InvitationExperience } from "./invitation-experience";
 
-export async function InvitationV2Page({ saturdayOnly = false, initialName, invitationToken }: { saturdayOnly?: boolean; initialName?: string; invitationToken?: string }) {
+export async function InvitationV2Page({ saturdayOnly = false, initialName, invitationToken, phase = "save-the-date", companions }: { saturdayOnly?: boolean; initialName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[] }) {
   const [settings, allEvents] = await Promise.all([getSettings(), getEvents(true)]);
   const saturdayEvent = allEvents.find((event) => event.slug === "sabado");
-  const visibleEvents = saturdayOnly && saturdayEvent ? [saturdayEvent] : allEvents;
+  const visibleEvents = saturdayOnly ? allEvents.filter((event) => event.slug === "sabado") : allEvents;
   const invitationEvents = withInvitationEventArtwork(visibleEvents);
   const targetEvent = saturdayOnly ? saturdayEvent || visibleEvents[0] : visibleEvents[0];
   const content = createInvitationContent(settings, saturdayOnly && saturdayEvent ? {
@@ -27,7 +28,16 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
     <InvitationExperience content={content}>
       <ItinerarySection events={invitationEvents} />
       {!saturdayOnly && <HospitalitySection settings={settings} />}
-      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken} />
+      {phase === "final" && settings.finalInvitationDetails && (
+        <section className="rsvp-section rsvp-section--details" aria-labelledby="final-invitation-details">
+          <div className="rsvp-shell">
+            <h2 id="final-invitation-details">Detalles de la boda</h2>
+            <div className="rsvp-rule" />
+            <p className="final-invitation-details">{settings.finalInvitationDetails}</p>
+          </div>
+        </section>
+      )}
+      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken} phase={phase} companions={companions} />
       <DeadlineSection settings={settings} targetEvent={targetEvent} />
       <PublicFooter settings={settings} />
     </InvitationExperience>

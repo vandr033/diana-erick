@@ -102,10 +102,22 @@ No se ejecutan migraciones ni seed automáticamente en cada request de Vercel. D
 - `/admin/responses/new` — agregar respuesta manual.
 - `/admin/responses/[id]` — ver, editar o eliminar una respuesta.
 - `/admin/whatsapp` — importar invitados, abrir mensajes manuales de WhatsApp y copiar enlaces.
+- `/admin/invitaciones` — gestionar invitados y enlaces de la invitación final.
 - `/admin/content` — editar textos públicos.
 - `/admin/events` — editar los tres eventos.
 - `/admin/settings` — SEO y apertura/cierre de confirmaciones.
 - `/api/admin/responses/export` — exportación protegida `.xlsx`.
+
+## Invitación final
+
+- `/boda` abre la invitación del fin de semana. `/boda/sabado` muestra la celebración del sábado.
+- En **Contenido → Invitación final**, agrega los detalles que verán los invitados de ambas variantes. El campo vacío oculta la sección.
+- En **Respuestas → Save the Date**, elige **Invitar a la boda** para crear un enlace con el nombre y el teléfono vinculado, si existe. Revisa qué eventos quieres incluir. También puedes agregar a alguien desde **Invitación final → Invitar persona**.
+- Define cuántos acompañantes tiene cada invitación personal al crearla o editarla. Los nombres son opcionales. Para invitaciones de solo sábado se confirma por persona. Para el fin de semana se confirma por día para todo el grupo.
+- Los enlaces personales en `/boda/<token>` incluyen solo los eventos asignados. En **Invitación final** puedes copiar el enlace, abrir el mensaje en WhatsApp y marcarlo como enviado después de enviarlo.
+- Usa **Respuestas → Invitación final** para revisar o exportar las nuevas confirmaciones. El resumen del panel sigue mostrando las respuestas al Save the Date.
+
+Aplica las migraciones pendientes con `npm run db:migrate` antes de desplegar esta versión.
 
 ## Invitaciones por WhatsApp
 
