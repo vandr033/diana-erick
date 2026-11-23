@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { Attendance, AttendanceDay, Event, InvitationPhase, PersonRsvp, SiteSettings } from "@/src/db/schema";
 import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
 import type { RsvpConfirmation } from "@/src/lib/rsvp-server";
+import { guestGuidePages } from "@/src/lib/wedding-guide";
 import { RsvpFeedback } from "./rsvp-feedback";
 
-type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel">;
+type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel" | "rsvpTitle" | "rsvpClosedMessage">;
 
 type FormValues = {
   fullName: string;
@@ -170,7 +171,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   </div>;
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [], savedConfirmation, canEdit = true }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean }) {
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [], savedConfirmation, canEdit = true, afterRsvp }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean; afterRsvp?: ReactNode }) {
   const isFinal = phase === "final";
   const days = rsvpDays.flatMap(({ slug, field }) => {
     const event = events.find((item) => item.slug === slug);
@@ -190,8 +191,17 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
   const [confirmation, setConfirmation] = useState(savedConfirmation);
   const [editingConfirmation, setEditingConfirmation] = useState(false);
   const confirmationRef = useRef<HTMLHeadingElement>(null);
+  const guideRef = useRef<HTMLHeadingElement>(null);
+  const scrollToGuide = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const fullNameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!scrollToGuide.current || !guideRef.current) return;
+    scrollToGuide.current = false;
+    guideRef.current.focus({ preventScroll: true });
+    guideRef.current.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }, [confirmation]);
 
   const startEditing = () => {
     if (!confirmation?.editReceipt) return;
@@ -260,8 +270,10 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         if (isFinal && payload.errors?.fullName) editName();
         return;
       }
+      scrollToGuide.current = isFinal;
       setConfirmation(payload.confirmation || toConfirmation(values));
-      showConfirmation();
+      if (isFinal) setEditingConfirmation(false);
+      else showConfirmation();
     } catch {
       setStatus("No fue posible guardar la respuesta. Intenta nuevamente.");
     } finally {
@@ -269,14 +281,12 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
     }
   };
 
-  if (confirmation && !editingConfirmation) {
-    const confirmedNames = [confirmation.fullName, ...(confirmation.party?.companions.map(companionLabel) ?? [])];
-    return (
+  const confirmedNames = [confirmation?.fullName, ...(confirmation?.party?.companions.map(companionLabel) ?? [])];
+  const confirmationContent = confirmation && !editingConfirmation ? (
       <div className="confirmation" aria-live="polite">
         <p className="eyebrow">Respuesta recibida</p>
         <h3 tabIndex={-1} ref={confirmationRef}>{settings.confirmationTitle}</h3>
         <p className="confirmation__message">{settings.confirmationMessage}</p>
-        {confirmation.feedbackReceipt && <RsvpFeedback receipt={confirmation.feedbackReceipt} />}
         <dl className="confirmation__summary">
           <div><dt>Nombre</dt><dd>{confirmation.fullName}</dd></div>
           {days.map(({ event, field }) => {
@@ -289,10 +299,9 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         </dl>
         {canEdit && confirmation.editReceipt && <button className="button button--outline form-submit" type="button" onClick={startEditing}>Editar confirmación</button>}
       </div>
-    );
-  }
+  ) : null;
 
-  return (
+  const formContent = (
     <form className="rsvp-form" ref={formRef} tabIndex={-1} onSubmit={submit} noValidate>
       {isFinal && !editingName ? <div className="rsvp-recipient">
         <p>Confirmación de <strong>{values.fullName}</strong></p>
@@ -330,4 +339,32 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
       </div> : <button className="button button--olive form-submit" type="submit" disabled={isSending}>{isSending ? "ENVIANDO…" : settings.submitButtonLabel}</button>}
     </form>
   );
+  const invitationPath = invitationToken ? `/boda/${encodeURIComponent(invitationToken)}` : endpoint.endsWith("/sabado") ? "/boda/sabado" : "/boda";
+
+  return <>
+    <section id="confirmar" className="rsvp-section" aria-labelledby="rsvp-title">
+      <div className="rsvp-shell">
+        <p className="eyebrow">Una pequeña confirmación</p>
+        <h2 id="rsvp-title">{settings.rsvpTitle}</h2>
+        <div className="rsvp-rule" />
+        {confirmationContent ?? (canEdit ? formContent : <div className="rsvp-closed" role="status">{settings.rsvpClosedMessage}</div>)}
+      </div>
+    </section>
+    {afterRsvp}
+    {isFinal && <section id="guia" className="rsvp-section guest-guide" aria-labelledby="guia-titulo">
+      <div className="rsvp-shell">
+        <h2 id="guia-titulo" ref={guideRef} tabIndex={-1}>Guía de la boda</h2>
+        <nav className="guest-guide__links" aria-label="Información para invitados">
+          {Object.entries(guestGuidePages).map(([slug, { label }]) => <Link className="button button--outline" href={`${invitationPath}/${slug}`} key={slug}>{label}</Link>)}
+        </nav>
+        <section className="guest-guide__group">
+          <h3>Resumen</h3>
+          {confirmation && <p role="status">Tu confirmación está guardada.</p>}
+          <a className="text-link" href="#confirmar">{confirmation ? "Ver confirmación" : "Confirmar asistencia"}</a>
+        </section>
+        {confirmation?.feedbackReceipt && <RsvpFeedback receipt={confirmation.feedbackReceipt}
+          food={confirmation.foodFeedback} music={confirmation.musicFeedback} flight={confirmation.flightFeedback} />}
+      </div>
+    </section>}
+  </>;
 }

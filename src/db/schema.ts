@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { FlightFeedback, FoodFeedback, MusicFeedback } from "@/src/lib/rsvp-feedback";
+import type { FaqEntry } from "@/src/lib/wedding-guide";
 import {
   integer,
   index,
@@ -57,6 +58,11 @@ export const siteSettings = sqliteTable("site_settings", {
   dianaParents: text("diana_parents").notNull().default(""),
   erickParents: text("erick_parents").notNull().default(""),
   updatedAt: timestamp("updated_at"),
+});
+
+export const weddingFaq = sqliteTable("wedding_faq", {
+  id: integer("id").primaryKey().default(1),
+  entries: text("entries", { mode: "json" }).$type<FaqEntry[]>().notNull(),
 });
 
 export const attendanceValues = ["yes", "no", "maybe"] as const;

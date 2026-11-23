@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/src/db/client";
 import { rsvpResponses } from "@/src/db/schema";
-import { foodOptions, musicStyles } from "@/src/lib/rsvp-feedback";
 
 const localDateTime = z.iso.datetime({ local: true, precision: -1, error: "Ingresa una fecha y hora válidas." })
   .refine((value) => value.length === 16, "Usa la hora local de Santa Cruz.");
@@ -13,16 +12,13 @@ const feedbackSchema = z.object({
   feedback: z.discriminatedUnion("kind", [
     z.object({
       kind: z.literal("food"),
-      options: z.array(z.enum(foodOptions)).max(foodOptions.length),
+      hasRestrictions: z.enum(["yes", "no"], { error: "Selecciona Sí o No." }),
       details: z.string().trim().max(500, "Usa hasta 500 caracteres."),
-    }).refine(({ options, details }) => options.length > 0 || details.length > 0,
-      "Selecciona una opción o cuéntanos qué debemos tener en cuenta.")
-      .refine(({ options, details }) => details || !options.some((option) => option === "Otra" || option === "Alergia alimentaria"),
-        "Cuéntanos cuál es la alergia o restricción."),
+    }).refine(({ hasRestrictions, details }) => hasRestrictions === "no" || details.length > 0,
+      "Cuéntanos qué restricción debemos tener en cuenta."),
     z.object({
       kind: z.literal("music"),
       song: z.string().trim().min(1, "Escribe una canción o un artista.").max(500, "Usa hasta 500 caracteres."),
-      style: z.enum(musicStyles).optional(),
     }),
     z.object({
       kind: z.literal("flight"),
@@ -39,9 +35,9 @@ export async function PATCH(request: Request) {
   if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
   const { receipt, feedback } = parsed.data;
   const changes = feedback.kind === "food"
-    ? { foodFeedback: { options: [...new Set(feedback.options)], details: feedback.details } }
+    ? { foodFeedback: { hasRestrictions: feedback.hasRestrictions, details: feedback.details } }
     : feedback.kind === "music"
-      ? { musicFeedback: { song: feedback.song, style: feedback.style } }
+      ? { musicFeedback: { song: feedback.song } }
       : { flightFeedback: { arrival: feedback.arrival, departure: feedback.departure, notes: feedback.notes } };
 
   try {

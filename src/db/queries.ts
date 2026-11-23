@@ -1,8 +1,14 @@
-import { and, count, desc, eq, gte, lte, or, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "./client";
-import { events, invitationGuests, rsvpResponses, siteSettings, type InvitationPhase } from "./schema";
+import { events, invitationGuests, rsvpResponses, siteSettings, weddingFaq, type InvitationPhase } from "./schema";
 import { defaultEvents, defaultSettings } from "@/src/lib/defaults";
 import { transportTotals } from "@/src/lib/invitation-party";
+import { defaultWeddingFaq } from "@/src/lib/wedding-guide";
+
+export async function getWeddingFaq() {
+  const [row] = await db.select({ entries: weddingFaq.entries }).from(weddingFaq).where(eq(weddingFaq.id, 1));
+  return row?.entries ?? defaultWeddingFaq;
+}
 
 function normalizeEventIconPath(event: typeof defaultEvents[number]) {
   if (!event.iconPath) return event;
@@ -36,8 +42,14 @@ export function responseFilterConditions(filters: {
   dateFrom?: string;
   dateTo?: string;
   phase?: string;
+  section?: string;
 }) {
   const conditions: (SQL | undefined)[] = [eq(rsvpResponses.phase, filters.phase === "final" ? "final" : "save-the-date")];
+  if (filters.phase === "final") {
+    if (filters.section === "comida") conditions.push(isNotNull(rsvpResponses.foodFeedback));
+    if (filters.section === "musica") conditions.push(isNotNull(rsvpResponses.musicFeedback));
+    if (filters.section === "vuelos") conditions.push(isNotNull(rsvpResponses.flightFeedback));
+  }
   if (filters.q) {
     const term = `%${filters.q.toLowerCase()}%`;
     conditions.push(sql`lower(${rsvpResponses.fullName}) like ${term}`);
@@ -60,7 +72,7 @@ export async function getResponses(filters: Parameters<typeof responseFilterCond
     const [rows, totalRows, transportRows] = await Promise.all([
       db.select().from(rsvpResponses).where(where).orderBy(desc(rsvpResponses.submittedAt)).limit(pageSize).offset((page - 1) * pageSize),
       db.select({ value: count() }).from(rsvpResponses).where(where),
-      filters.phase === "final" ? db.select({ party: rsvpResponses.party }).from(rsvpResponses).where(where) : null,
+      filters.phase === "final" && !filters.section ? db.select({ party: rsvpResponses.party }).from(rsvpResponses).where(where) : null,
     ]);
     return { rows, total: totalRows[0]?.value ?? 0, transport: transportRows ? transportTotals(transportRows) : null };
   } catch {

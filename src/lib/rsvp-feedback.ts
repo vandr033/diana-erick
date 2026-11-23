@@ -1,6 +1,8 @@
-export const foodOptions = ["Vegetariana", "Vegana", "Sin gluten", "Sin lactosa", "Halal", "Kosher", "Alergia alimentaria", "Otra"] as const;
-export const musicStyles = ["DJ / electrónica", "Cena / formal", "Pista de baile", "Otra"] as const;
-
-export type FoodFeedback = { options: (typeof foodOptions)[number][]; details: string };
-export type MusicFeedback = { song: string; style?: (typeof musicStyles)[number] };
+export type FoodFeedback = { hasRestrictions: "yes" | "no"; details: string } | { options: string[]; details: string };
+export type MusicFeedback = { song: string };
 export type FlightFeedback = { arrival: string; departure?: string; notes: string };
+
+export function describeFoodFeedback(food: FoodFeedback) {
+  if ("hasRestrictions" in food) return { answer: food.hasRestrictions === "yes" ? "Sí" : "No", details: food.details };
+  return { answer: "Sí", details: [food.options.join(", "), food.details].filter(Boolean).join("\n") };
+}

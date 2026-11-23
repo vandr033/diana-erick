@@ -7,6 +7,7 @@ import { rsvpResponses, type Attendance } from "@/src/db/schema";
 import { requireAdminApi } from "@/src/lib/auth";
 import { formatDateTime } from "@/src/lib/dates";
 import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
+import { describeFoodFeedback } from "@/src/lib/rsvp-feedback";
 
 export const runtime = "nodejs";
 
@@ -62,18 +63,21 @@ export async function GET(request: Request) {
       summarySheet["!cols"] = [{ wch: 23 }, { wch: 24 }, { wch: 13 }, { wch: 12 }, { wch: 24 }, { wch: 27 }, { wch: 27 }];
       XLSX.utils.book_append_sheet(workbook, summarySheet, "RESUMEN");
 
-      const foodRows = rows.flatMap(({ fullName, foodFeedback }) => foodFeedback
-        ? [[fullName, foodFeedback.options.join(", "), foodFeedback.details]] : []);
+      const foodRows = rows.flatMap(({ fullName, foodFeedback }) => {
+        if (!foodFeedback) return [];
+        const { answer, details } = describeFoodFeedback(foodFeedback);
+        return [[fullName, answer, details]];
+      });
       const foodSheet = XLSX.utils.aoa_to_sheet([["Nombre", "Restricciones alimentarias", "Detalles"], ...foodRows]);
       foodSheet["!cols"] = [{ wch: 32 }, { wch: 32 }, { wch: 50 }];
       foodSheet["!autofilter"] = { ref: `A1:C${foodRows.length + 1}` };
       XLSX.utils.book_append_sheet(workbook, foodSheet, "COMIDA");
 
       const musicRows = rows.flatMap(({ fullName, musicFeedback }) => musicFeedback
-        ? [[fullName, musicFeedback.song, musicFeedback.style ?? ""]] : []);
-      const musicSheet = XLSX.utils.aoa_to_sheet([["Nombre", "Canción y artista", "Estilo"], ...musicRows]);
-      musicSheet["!cols"] = [{ wch: 32 }, { wch: 45 }, { wch: 20 }];
-      musicSheet["!autofilter"] = { ref: `A1:C${musicRows.length + 1}` };
+        ? [[fullName, musicFeedback.song]] : []);
+      const musicSheet = XLSX.utils.aoa_to_sheet([["Nombre", "Canción y artista"], ...musicRows]);
+      musicSheet["!cols"] = [{ wch: 32 }, { wch: 50 }];
+      musicSheet["!autofilter"] = { ref: `A1:B${musicRows.length + 1}` };
       XLSX.utils.book_append_sheet(workbook, musicSheet, "MÚSICA");
 
       const flightRows = rows.flatMap(({ fullName, flightFeedback }) => flightFeedback ? [[

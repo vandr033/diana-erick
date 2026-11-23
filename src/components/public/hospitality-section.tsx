@@ -1,4 +1,4 @@
-import type { SiteSettings } from "@/src/db/schema";
+import type { Event, SiteSettings } from "@/src/db/schema";
 
 function resolveTransportMessage(template: string, hotel: string) {
   return template
@@ -6,14 +6,15 @@ function resolveTransportMessage(template: string, hotel: string) {
     .replaceAll("{eventos}", "todos los eventos del fin de semana");
 }
 
-export function HospitalitySection({ settings }: { settings: SiteSettings }) {
+export function HospitalitySection({ settings, events = [] }: { settings: SiteSettings; events?: Event[] }) {
   const transportMessage = resolveTransportMessage(
     settings.transportMessage,
     settings.hotelName,
   );
+  const eventLocations = events.filter((event) => event.mapsUrl);
 
   return (
-    <section className="hospitality-section" aria-labelledby="hospitality-title">
+    <section id="hospedaje" className="hospitality-section" aria-labelledby="hospitality-title">
       <div className="hospitality-section__inner">
         <div className="hospitality-section__intro">
           <p className="eyebrow">Hospedaje y traslados</p>
@@ -32,6 +33,16 @@ export function HospitalitySection({ settings }: { settings: SiteSettings }) {
             <p className="hospitality-detail__label">Transporte</p>
             <p>{transportMessage}</p>
           </div>
+          {eventLocations.length > 0 && <div className="hospitality-detail">
+            <p className="hospitality-detail__label">Ubicación de los eventos</p>
+            <ul className="hospitality-detail__links">
+              {eventLocations.map((event) => <li key={event.id}>
+                <a className="hospitality-detail__link" href={event.mapsUrl ?? undefined} target="_blank" rel="noreferrer">
+                  {event.title} · {event.venueName || event.subtitle} ↗
+                </a>
+              </li>)}
+            </ul>
+          </div>}
         </div>
       </div>
     </section>

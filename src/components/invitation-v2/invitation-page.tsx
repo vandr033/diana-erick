@@ -34,7 +34,7 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
       ? rsvpDays.filter(({ slug }) => visibleEvents.some((event) => event.slug === slug))
       : undefined}>
       <ItinerarySection events={invitationEvents} />
-      {!saturdayOnly && <HospitalitySection settings={settings} />}
+      {!saturdayOnly && <HospitalitySection settings={settings} events={phase === "final" ? visibleEvents : undefined} />}
       {phase === "final" && settings.finalInvitationDetails && (
         <section className="rsvp-section rsvp-section--details" aria-labelledby="final-invitation-details">
           <div className="rsvp-shell">
@@ -45,8 +45,8 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
         </section>
       )}
       <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken}
-        phase={phase} companions={companions} savedConfirmation={savedConfirmation} />
-      <DeadlineSection settings={settings} targetEvent={targetEvent} />
+        phase={phase} companions={companions} savedConfirmation={savedConfirmation}
+        afterRsvp={<DeadlineSection settings={settings} targetEvent={targetEvent} />} />
       <PublicFooter settings={settings} />
     </InvitationExperience>
   );

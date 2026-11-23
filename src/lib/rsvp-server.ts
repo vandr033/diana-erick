@@ -8,7 +8,7 @@ import { rsvpDays } from "@/src/lib/invitation-party";
 import { attendanceByDaySchema, rsvpSchema, saturdayAttendanceSchema } from "@/src/lib/validation";
 import { newId } from "@/src/lib/utils";
 
-export type RsvpConfirmation = Pick<RsvpResponse, "fullName" | "attendsFriday" | "attendsSaturday" | "attendsSunday" | "comment"> & {
+export type RsvpConfirmation = Pick<RsvpResponse, "fullName" | "attendsFriday" | "attendsSaturday" | "attendsSunday" | "comment"> & Partial<Pick<RsvpResponse, "foodFeedback" | "musicFeedback" | "flightFeedback">> & {
   party?: PartyResponse | null;
   editReceipt?: string;
   feedbackReceipt?: string;
@@ -22,12 +22,13 @@ export async function getLatestWeddingResponse(guestId: string, database: Pick<t
   return response;
 }
 
-export function toRsvpConfirmation({ id, invitationGuestId, phase, source, fullName, attendsFriday, attendsSaturday, attendsSunday, comment, party }: RsvpResponse): RsvpConfirmation {
+export function toRsvpConfirmation({ id, invitationGuestId, phase, source, fullName, attendsFriday, attendsSaturday, attendsSunday, comment, party, foodFeedback, musicFeedback, flightFeedback }: RsvpResponse): RsvpConfirmation {
   const canSendFeedback = phase === "final" && source === "public" && [attendsFriday, attendsSaturday, attendsSunday].includes("yes");
   return {
     fullName, attendsFriday, attendsSaturday, attendsSunday, comment, party,
     editReceipt: phase === "final" && invitationGuestId ? id : undefined,
     feedbackReceipt: canSendFeedback ? id : undefined,
+    foodFeedback, musicFeedback: musicFeedback ? { song: musicFeedback.song } : null, flightFeedback,
   };
 }
 

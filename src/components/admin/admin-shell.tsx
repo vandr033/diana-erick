@@ -8,6 +8,7 @@ const links = [
   ["WhatsApp", "/admin/whatsapp"],
   ["Invitación final", "/admin/invitaciones"],
   ["Contenido", "/admin/content"],
+  ["Preguntas frecuentes", "/admin/faq"],
   ["Eventos", "/admin/events"],
   ["Configuración", "/admin/settings"],
 ] as const;
