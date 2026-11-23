@@ -8,10 +8,11 @@ import { getEvents, getSettings } from "@/src/db/queries";
 import type { InvitationPhase } from "@/src/db/schema";
 import { formatDayMonth, formatLongDate } from "@/src/lib/dates";
 import { rsvpDays } from "@/src/lib/invitation-party";
+import type { RsvpConfirmation } from "@/src/lib/rsvp-server";
 import { createInvitationContent } from "./invitation-content";
 import { InvitationExperience } from "./invitation-experience";
 
-export async function InvitationV2Page({ saturdayOnly = false, initialName, invitationToken, phase = "save-the-date", companions }: { saturdayOnly?: boolean; initialName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[] }) {
+export async function InvitationV2Page({ saturdayOnly = false, initialName, invitationToken, phase = "save-the-date", companions, savedConfirmation }: { saturdayOnly?: boolean; initialName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation }) {
   const [settings, allEvents] = await Promise.all([getSettings(), getEvents(true)]);
   const saturdayEvent = allEvents.find((event) => event.slug === "sabado");
   const visibleEvents = saturdayOnly ? allEvents.filter((event) => event.slug === "sabado") : allEvents;
@@ -43,7 +44,8 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
           </div>
         </section>
       )}
-      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken} phase={phase} companions={companions} />
+      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken}
+        phase={phase} companions={companions} savedConfirmation={savedConfirmation} />
       <DeadlineSection settings={settings} targetEvent={targetEvent} />
       <PublicFooter settings={settings} />
     </InvitationExperience>

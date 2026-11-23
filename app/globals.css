@@ -170,6 +170,7 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .rsvp-day__toggle[aria-expanded="true"]::after { transform: translateY(-2px) rotate(45deg); }
 .rsvp-day__choices { padding-bottom: var(--space-sm); }
 .rsvp-day__error { margin-bottom: var(--space-sm); }
+.rsvp-day__hint { margin-bottom: var(--space-sm); color: var(--color-muted); font-size: 12px; }
 .rsvp-transport { border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent); }
 .rsvp-transport__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .rsvp-transport__heading h4 { color: var(--color-olive-dark); font-size: 13px; font-weight: 600; }
@@ -206,6 +207,7 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .confirmation__summary dt { color: var(--color-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
 .confirmation__summary dd { margin: 0; font-size: 13px; white-space: pre-line; overflow-wrap: anywhere; min-width: 0; }
 .confirmation__summary ul { display: grid; gap: 8px; }
+.rsvp-edit-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
 .rsvp-feedback { display: grid; gap: var(--space-sm); }
 @media (min-width: 560px) { .rsvp-feedback { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .rsvp-feedback__action > .button { width: 100%; padding-inline: var(--space-sm); letter-spacing: .06em; text-align: center; }

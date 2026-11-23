@@ -1,11 +1,35 @@
+import { and, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/src/db/client";
 import { getEvents, getSettings } from "@/src/db/queries";
-import { rsvpResponses, type PartyResponse } from "@/src/db/schema";
+import { rsvpResponses, type PartyResponse, type RsvpResponse } from "@/src/db/schema";
 import { getInvitationGuest } from "@/src/lib/invitation-guests";
 import { rsvpDays } from "@/src/lib/invitation-party";
 import { attendanceByDaySchema, rsvpSchema, saturdayAttendanceSchema } from "@/src/lib/validation";
 import { newId } from "@/src/lib/utils";
+
+export type RsvpConfirmation = Pick<RsvpResponse, "fullName" | "attendsFriday" | "attendsSaturday" | "attendsSunday" | "comment"> & {
+  party?: PartyResponse | null;
+  editReceipt?: string;
+  feedbackReceipt?: string;
+};
+
+export async function getLatestWeddingResponse(guestId: string, database: Pick<typeof db, "select"> = db) {
+  const [response] = await database.select().from(rsvpResponses)
+    .where(and(eq(rsvpResponses.invitationGuestId, guestId), eq(rsvpResponses.phase, "final")))
+    .orderBy(desc(rsvpResponses.submittedAt), desc(rsvpResponses.id))
+    .limit(1);
+  return response;
+}
+
+export function toRsvpConfirmation({ id, invitationGuestId, phase, source, fullName, attendsFriday, attendsSaturday, attendsSunday, comment, party }: RsvpResponse): RsvpConfirmation {
+  const canSendFeedback = phase === "final" && source === "public" && [attendsFriday, attendsSaturday, attendsSunday].includes("yes");
+  return {
+    fullName, attendsFriday, attendsSaturday, attendsSunday, comment, party,
+    editReceipt: phase === "final" && invitationGuestId ? id : undefined,
+    feedbackReceipt: canSendFeedback ? id : undefined,
+  };
+}
 
 export async function handleRsvpSubmission(request: Request, scope: "all" | "saturday") {
   try {
@@ -77,11 +101,30 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
     if (phase === "final" && Object.values(attendance).includes("maybe")) {
       return NextResponse.json({ message: "Elige sí o no para confirmar la asistencia." }, { status: 400 });
     }
-    const comment = parsed.data.comment?.trim() || null;
-    const id = newId();
-    await db.insert(rsvpResponses).values({ id, fullName: parsed.data.fullName, invitationGuestId: invitationGuest?.id ?? null, phase, party, ...attendance, comment, source: "public", submittedAt: now, updatedAt: now });
-    const feedbackReceipt = phase === "final" && Object.values(attendance).includes("yes") ? id : undefined;
-    return NextResponse.json({ confirmation: { ...parsed.data, ...attendance, comment, party, feedbackReceipt } }, { status: 201 });
+    const changes = { fullName: parsed.data.fullName, party, ...attendance, comment: parsed.data.comment?.trim() || null, updatedAt: now };
+    const newResponse: typeof rsvpResponses.$inferInsert = {
+      ...changes, id: newId(), invitationGuestId: invitationGuest?.id ?? null, phase, source: "public", submittedAt: now,
+    };
+
+    if (phase === "final" && invitationGuest) {
+      // Use a write transaction so simultaneous first submissions cannot both create a row.
+      const result = await db.transaction(async (tx) => {
+        const existing = await getLatestWeddingResponse(invitationGuest.id, tx);
+        if (body.editReceipt !== undefined && body.editReceipt !== existing?.id) return null;
+        if (existing && body.editReceipt === undefined) return { row: existing, status: 200 };
+        if (existing) {
+          const [row] = await tx.update(rsvpResponses).set(changes).where(eq(rsvpResponses.id, existing.id)).returning();
+          return { row, status: 200 };
+        }
+        const [row] = await tx.insert(rsvpResponses).values(newResponse).returning();
+        return { row, status: 201 };
+      });
+      if (!result) return NextResponse.json({ message: "La confirmación cambió. Recarga la invitación e inténtalo nuevamente." }, { status: 409 });
+      return NextResponse.json({ confirmation: toRsvpConfirmation(result.row) }, { status: result.status });
+    }
+
+    const [row] = await db.insert(rsvpResponses).values(newResponse).returning();
+    return NextResponse.json({ confirmation: toRsvpConfirmation(row) }, { status: 201 });
   } catch (error) {
     console.error("Error al guardar RSVP", error instanceof Error ? error.message : error);
     return NextResponse.json({ message: "No fue posible guardar la respuesta. Intenta nuevamente." }, { status: 500 });

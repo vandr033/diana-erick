@@ -2,19 +2,10 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import type { Attendance, AttendanceDay, Event, InvitationPhase, PartyResponse, PersonRsvp, SiteSettings } from "@/src/db/schema";
+import type { Attendance, AttendanceDay, Event, InvitationPhase, PersonRsvp, SiteSettings } from "@/src/db/schema";
 import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
+import type { RsvpConfirmation } from "@/src/lib/rsvp-server";
 import { RsvpFeedback } from "./rsvp-feedback";
-
-type Confirmation = {
-  fullName: string;
-  attendsFriday: Attendance;
-  attendsSaturday: Attendance;
-  attendsSunday: Attendance;
-  comment: string | null;
-  party?: PartyResponse | null;
-  feedbackReceipt?: string;
-};
 
 type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel">;
 
@@ -73,7 +64,7 @@ function AttendanceField({ fieldId, title, subtitle, value, onChange, error }: {
   );
 }
 
-function toConfirmation(values: FormValues): Confirmation {
+function toConfirmation(values: FormValues): RsvpConfirmation {
   return {
     fullName: values.fullName.trim(),
     attendsFriday: values.attendsFriday || "no",
@@ -100,6 +91,8 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   const attendees = people.filter((person) => person.attendance === "yes");
   const attending = attendees.length;
   const transportAnswer = groupAnswer(attendees.map((person) => person.transport));
+  const attendanceAnswer = groupAnswer(people.map((person) => person.attendance));
+  const showIndividuals = customAttendance || attendanceAnswer === "some";
   const hasGroup = people.length > 1;
   const summary = pending || transportPending ? "Pendiente" : people.length === 1
     ? (attending ? "Va" : "No va")
@@ -127,13 +120,13 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
     <div id={panelId} role="group" aria-labelledby={buttonId} hidden={!open}>
       <div className="rsvp-day__choices" role="group" aria-label="Asistencia">
         {hasGroup
-          ? <AttendanceOptions fieldId={`${panelId}-attendance`} value={customAttendance ? "some" : groupAnswer(people.map((person) => person.attendance))}
+          ? <AttendanceOptions fieldId={`${panelId}-attendance`} value={showIndividuals ? "some" : attendanceAnswer}
               onChange={answerAttendance} labels={groupAttendanceLabels} choices={["yes", "no", "some"]} />
           : <AttendanceOptions fieldId={`${panelId}-attendance`} value={people[0]?.attendance ?? ""}
               onChange={answerAttendance} labels={personAttendanceLabels} choices={["yes", "no"]} />}
       </div>
       {incomplete && pending && <p className="field-error rsvp-day__error" role="alert">Completa la asistencia antes de enviar.</p>}
-      {hasGroup && customAttendance && people.map((person, index) => {
+      {hasGroup && showIndividuals && people.map((person, index) => {
         const personId = `${panelId}-person-${index}`;
         return <div className="rsvp-person" role="group" aria-labelledby={`${personId}-name`} key={index}>
           <span id={`${personId}-name`}>{names[index]}</span>
@@ -155,6 +148,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
             }}>Info</Link>
         </div>
         {!pending && attending > 0 && <div className="rsvp-day__choices">
+          {transportAnswer === "some" && <p className="rsvp-day__hint">Ya hay respuestas de transporte individuales guardadas.</p>}
           <AttendanceOptions fieldId={`${panelId}-transport`} value={transportAnswer === "some" ? "" : transportAnswer}
             onChange={answerTransport} labels={transportLabels} choices={["yes", "no"]} />
         </div>}
@@ -176,7 +170,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   </div>;
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [] }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[] }) {
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [], savedConfirmation, canEdit = true }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean }) {
   const isFinal = phase === "final";
   const days = rsvpDays.flatMap(({ slug, field }) => {
     const event = events.find((item) => item.slug === slug);
@@ -193,9 +187,37 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [confirmation, setConfirmation] = useState(savedConfirmation);
+  const [editingConfirmation, setEditingConfirmation] = useState(false);
   const confirmationRef = useRef<HTMLHeadingElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const fullNameRef = useRef<HTMLInputElement>(null);
+
+  const startEditing = () => {
+    if (!confirmation?.editReceipt) return;
+    const { fullName, attendsFriday, attendsSaturday, attendsSunday, comment, party } = confirmation;
+    setValues({ fullName, attendsFriday, attendsSaturday, attendsSunday, comment: comment ?? "" });
+    const sameCompanions = companions.length === (party?.companions.length ?? 0) &&
+      companions.every((name, index) => name === party?.companions[index]);
+    setAttendanceByDay(Object.fromEntries(days.map(({ field }) => {
+      const people = Array.from({ length: names.length }, (_, index): PersonDraft => {
+        if (index > 0 && !sameCompanions) return { attendance: "" };
+        if (party?.attendanceByDay) return party.attendanceByDay[field]?.[index] ?? { attendance: "" };
+        const attendance = (field === "attendsSaturday" ? party?.saturdayAttendance?.[index] : undefined) ?? confirmation[field];
+        return { attendance: attendance === "maybe" ? "" : attendance };
+      });
+      return [field, people];
+    })));
+    setEditingName(false);
+    setOpenDay(days[0]?.field);
+    setEditingConfirmation(true);
+    requestAnimationFrame(() => formRef.current?.focus());
+  };
+
+  const showConfirmation = () => {
+    setEditingConfirmation(false);
+    requestAnimationFrame(() => confirmationRef.current?.focus());
+  };
 
   const editName = () => {
     setEditingName(true);
@@ -226,11 +248,12 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
           honeypot: "",
           invitationToken,
           phase,
+          editReceipt: editingConfirmation ? confirmation?.editReceipt : undefined,
           companions: isFinal && companions.length ? companions : undefined,
           attendanceByDay: isFinal ? attendanceByDay : undefined,
         }),
       });
-      const payload = await response.json() as { confirmation?: Confirmation; errors?: Record<string, string>; message?: string };
+      const payload = await response.json() as { confirmation?: RsvpConfirmation; errors?: Record<string, string>; message?: string };
       if (!response.ok) {
         setErrors(payload.errors || {});
         setStatus(payload.message || "No fue posible guardar la respuesta. Intenta nuevamente.");
@@ -238,7 +261,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         return;
       }
       setConfirmation(payload.confirmation || toConfirmation(values));
-      window.setTimeout(() => confirmationRef.current?.focus(), 0);
+      showConfirmation();
     } catch {
       setStatus("No fue posible guardar la respuesta. Intenta nuevamente.");
     } finally {
@@ -246,7 +269,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
     }
   };
 
-  if (confirmation) {
+  if (confirmation && !editingConfirmation) {
     const confirmedNames = [confirmation.fullName, ...(confirmation.party?.companions.map(companionLabel) ?? [])];
     return (
       <div className="confirmation" aria-live="polite">
@@ -264,12 +287,13 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
           })}
           {confirmation.comment && <div><dt>Comentario</dt><dd>{confirmation.comment}</dd></div>}
         </dl>
+        {canEdit && confirmation.editReceipt && <button className="button button--outline form-submit" type="button" onClick={startEditing}>Editar confirmación</button>}
       </div>
     );
   }
 
   return (
-    <form className="rsvp-form" onSubmit={submit} noValidate>
+    <form className="rsvp-form" ref={formRef} tabIndex={-1} onSubmit={submit} noValidate>
       {isFinal && !editingName ? <div className="rsvp-recipient">
         <p>Confirmación de <strong>{values.fullName}</strong></p>
         <button type="button" onClick={editName}>Editar nombre</button>
@@ -295,7 +319,15 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
       </>}
       <div className="honeypot" aria-hidden="true"><label htmlFor="website">Sitio web</label><input id="website" name="website" tabIndex={-1} autoComplete="off" /></div>
       {status && <p className="form-status" role="alert">{status}</p>}
-      <button className="button button--olive form-submit" type="submit" disabled={isSending}>{isSending ? "ENVIANDO…" : settings.submitButtonLabel}</button>
+      {editingConfirmation ? <div className="rsvp-edit-actions">
+        <button className="button button--olive" type="submit" disabled={isSending}>{isSending ? "GUARDANDO…" : "Guardar cambios"}</button>
+        <button className="button button--outline" type="button" disabled={isSending} onClick={() => {
+          setErrors({});
+          setStatus(null);
+          setIncompleteDay(undefined);
+          showConfirmation();
+        }}>Cancelar</button>
+      </div> : <button className="button button--olive form-submit" type="submit" disabled={isSending}>{isSending ? "ENVIANDO…" : settings.submitButtonLabel}</button>}
     </form>
   );
 }
