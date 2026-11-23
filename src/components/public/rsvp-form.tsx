@@ -30,25 +30,32 @@ const attendanceLabels: Record<Attendance, string> = {
   maybe: "Tal vez",
   no: "No asistiré",
 };
-const personAttendanceLabels = { yes: "Va", no: "No va", maybe: "Tal vez" };
+const personAttendanceLabels = { yes: "Va", no: "No va" };
 type PersonDraft = Omit<PersonRsvp, "attendance"> & { attendance: PersonRsvp["attendance"] | "" };
 
-function AttendanceField({ fieldId, title, subtitle, value, onChange, labels = attendanceLabels, allowMaybe = false, error }: {
-  fieldId: string; title: string; subtitle?: string; value: Attendance | ""; onChange: (value: Attendance) => void;
-  labels?: Record<Attendance, string>; allowMaybe?: boolean; error?: string;
+function AttendanceOptions<Choice extends Attendance>({ fieldId, value, onChange, labels, choices }: {
+  fieldId: string; value: Choice | ""; onChange: (value: Choice) => void;
+  labels: Record<Choice, string>; choices: readonly Choice[];
 }) {
-  const choices: Attendance[] = allowMaybe ? ["yes", "maybe", "no"] : ["yes", "no"];
+  return (
+    <div className={`attendance-options${choices.length === 2 ? " attendance-options--binary" : ""}`}>
+      {choices.map((choice) => (
+        <label className={`attendance-option ${value === choice ? "is-selected" : ""}`} key={choice}>
+          <input type="radio" name={fieldId} value={choice} checked={value === choice} onChange={() => onChange(choice)} />
+          <span>{labels[choice]}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function AttendanceField({ fieldId, title, subtitle, value, onChange, error }: {
+  fieldId: string; title: string; subtitle: string; value: Attendance | ""; onChange: (value: Attendance) => void; error?: string;
+}) {
   return (
     <fieldset className="attendance-field">
-      <legend><span id={`${fieldId}-name`}>{title}</span>{subtitle && <small>{subtitle}</small>}</legend>
-      <div className={`attendance-options${allowMaybe ? "" : " attendance-options--binary"}`}>
-        {choices.map((choice) => (
-          <label className={`attendance-option ${value === choice ? "is-selected" : ""}`} key={choice}>
-            <input type="radio" name={fieldId} value={choice} checked={value === choice} onChange={() => onChange(choice)} />
-            <span>{labels[choice]}</span>
-          </label>
-        ))}
-      </div>
+      <legend><span>{title}</span>{subtitle && <small>{subtitle}</small>}</legend>
+      <AttendanceOptions fieldId={fieldId} value={value} onChange={onChange} labels={attendanceLabels} choices={["yes", "maybe", "no"]} />
       {error && <p className="field-error">{error}</p>}
     </fieldset>
   );
@@ -64,40 +71,62 @@ function toConfirmation(values: FormValues): Confirmation {
   };
 }
 
-function DayAttendance({ event, names, people, onChange }: {
+function DayAttendance({ event, names, people, open, onToggle, incomplete, onChange }: {
   event: Event;
   names: string[];
   people: PersonDraft[];
+  open: boolean;
+  onToggle: () => void;
+  incomplete: boolean;
   onChange: (people: PersonDraft[]) => void;
 }) {
+  const panelId = `rsvp-${event.slug}`;
+  const buttonId = `${panelId}-toggle`;
+  const pending = people.some((person) => !person.attendance);
+  const attending = people.filter((person) => person.attendance === "yes").length;
+  const summary = pending ? "Pendiente" : people.length === 1
+    ? (attending ? "Va" : "No va")
+    : (attending ? `${attending} de ${people.length} asisten` : "Nadie va");
+  const hasComments = people.some((person) => person.comment?.trim());
   const updatePerson = (index: number, change: Partial<PersonDraft>) => {
     onChange(people.map((person, position) => position === index ? { ...person, ...change } : person));
   };
 
-  return <fieldset className="attendance-field rsvp-day">
-    <legend><span>{event.title}</span><small>{event.subtitle}</small></legend>
-    {names.length > 1 && <div className="attendance-options attendance-options--binary">
-      <button className="attendance-option" type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "yes" })))}>Todos vamos</button>
-      <button className="attendance-option" type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "no" })))}>Nadie va</button>
-    </div>}
-    {people.map((person, index) => {
-      const personId = `${event.slug}-person-${index}`;
-      const commentId = `${personId}-comment`;
-      return <div className="rsvp-person" key={index}>
-        <AttendanceField fieldId={personId} title={names[index]} labels={personAttendanceLabels} value={person.attendance} onChange={(choice) => {
-          if (choice !== "maybe") updatePerson(index, { attendance: choice });
-        }} />
-        <label className="rsvp-comment-toggle">
-          <input type="checkbox" aria-describedby={`${personId}-name`} checked={person.comment !== undefined} onChange={(change) => updatePerson(index, { comment: change.target.checked ? "" : undefined })} />
-          Agregar comentario
-        </label>
-        {person.comment !== undefined && <div className="form-field">
-          <label className="sr-only" htmlFor={commentId}>Comentario de {names[index]} · {event.title}</label>
-          <textarea id={commentId} rows={3} maxLength={1000} value={person.comment} onChange={(change) => updatePerson(index, { comment: change.target.value })} />
-        </div>}
-      </div>;
-    })}
-  </fieldset>;
+  return <div className="rsvp-day">
+    <h3>
+      <button className="rsvp-day__toggle" id={buttonId} type="button" aria-expanded={open} aria-controls={panelId} onClick={onToggle}>
+        <span><span className="rsvp-day__title">{event.title}</span><small>{event.subtitle}</small></span>
+        <span className="rsvp-day__status" aria-live="polite">{summary}</span>
+      </button>
+    </h3>
+    <div id={panelId} role="group" aria-labelledby={buttonId} hidden={!open}>
+      {names.length > 1 && <div className="rsvp-day__shortcuts">
+        <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "yes" })))}>Todos vamos</button>
+        <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "no" })))}>Nadie va</button>
+      </div>}
+      {incomplete && pending && <p className="field-error rsvp-day__error" role="alert">Elige Va o No va para cada persona.</p>}
+      {people.map((person, index) => {
+        const personId = `${panelId}-person-${index}`;
+        return <div className="rsvp-person" role="group" aria-labelledby={`${personId}-name`} key={index}>
+          <span id={`${personId}-name`}>{names[index]}</span>
+          <AttendanceOptions fieldId={personId} value={person.attendance} onChange={(attendance) => updatePerson(index, { attendance })}
+            labels={personAttendanceLabels} choices={["yes", "no"]} />
+        </div>;
+      })}
+      <details className="rsvp-comments">
+        <summary>{hasComments ? "Editar comentarios" : "Agregar comentarios (opcional)"}</summary>
+        <div className="rsvp-comments__fields">
+          {people.map((person, index) => {
+            const commentId = `${panelId}-comment-${index}`;
+            return <div className="form-field" key={index}>
+              <label htmlFor={commentId}>Comentario de {names[index]}</label>
+              <textarea id={commentId} rows={2} maxLength={1000} value={person.comment ?? ""} onChange={(change) => updatePerson(index, { comment: change.target.value || undefined })} />
+            </div>;
+          })}
+        </div>
+      </details>
+    </div>
+  </div>;
 }
 
 export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [] }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[] }) {
@@ -107,6 +136,9 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
     return event ? [{ event, field }] : [];
   });
   const [values, setValues] = useState(() => ({ ...initialValues, fullName: initialFullName }));
+  const [editingName, setEditingName] = useState(!initialFullName);
+  const [openDay, setOpenDay] = useState<AttendanceDay | undefined>(days[0]?.field);
+  const [incompleteDay, setIncompleteDay] = useState<AttendanceDay>();
   const names = [values.fullName.trim() || "Tú", ...companions.map(companionLabel)];
   const [attendanceByDay, setAttendanceByDay] = useState<Partial<Record<AttendanceDay, PersonDraft[]>>>(() =>
     isFinal ? Object.fromEntries(days.map(({ field }) => [field, Array.from({ length: companions.length + 1 }, () => ({ attendance: "" }))])) : {},
@@ -116,6 +148,12 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
   const [isSending, setIsSending] = useState(false);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const confirmationRef = useRef<HTMLHeadingElement>(null);
+  const fullNameRef = useRef<HTMLInputElement>(null);
+
+  const editName = () => {
+    setEditingName(true);
+    requestAnimationFrame(() => fullNameRef.current?.focus());
+  };
 
   const update = <Key extends keyof FormValues>(key: Key, value: FormValues[Key]) => setValues((current) => ({ ...current, [key]: value }));
 
@@ -123,9 +161,12 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
     event.preventDefault();
     setErrors({});
     setStatus(null);
+    setIncompleteDay(undefined);
     const unansweredDay = isFinal && days.find(({ field }) => attendanceByDay[field]?.some((person) => !person.attendance));
     if (unansweredDay) {
-      setStatus(`Indica si asistirá cada persona a ${unansweredDay.event.title}.`);
+      setOpenDay(unansweredDay.field);
+      setIncompleteDay(unansweredDay.field);
+      document.getElementById(`rsvp-${unansweredDay.event.slug}-toggle`)?.focus();
       return;
     }
     setIsSending(true);
@@ -146,6 +187,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
       if (!response.ok) {
         setErrors(payload.errors || {});
         setStatus(payload.message || "No fue posible guardar la respuesta. Intenta nuevamente.");
+        if (isFinal && payload.errors?.fullName) editName();
         return;
       }
       setConfirmation(payload.confirmation || toConfirmation(values));
@@ -180,22 +222,29 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
 
   return (
     <form className="rsvp-form" onSubmit={submit} noValidate>
-      <div className="form-field">
+      {isFinal && !editingName ? <div className="rsvp-recipient">
+        <p>Confirmación de <strong>{values.fullName}</strong></p>
+        <button type="button" onClick={editName}>Editar nombre</button>
+      </div> : <div className="form-field">
         <label htmlFor="fullName">{settings.fullNameLabel} <span aria-hidden="true">*</span></label>
-        <input id="fullName" name="fullName" value={values.fullName} onChange={(event) => update("fullName", event.target.value)} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? "fullName-error" : undefined} autoComplete="name" />
+        <input id="fullName" name="fullName" ref={fullNameRef} value={values.fullName} onChange={(event) => update("fullName", event.target.value)} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? "fullName-error" : undefined} autoComplete="name" />
         {errors.fullName && <p id="fullName-error" className="field-error">{errors.fullName}</p>}
-      </div>
-      <p className="form-instruction">{isFinal ? "Confirma la asistencia de cada persona por día." : settings.attendancePromptLabel}</p>
-      {days.map(({ event, field }) => isFinal
-        ? <DayAttendance key={event.id} event={event} names={names} people={attendanceByDay[field] ?? []}
-            onChange={(people) => setAttendanceByDay((current) => ({ ...current, [field]: people }))} />
-        : <AttendanceField key={event.id} fieldId={`attendance-${event.slug}`} title={event.title} subtitle={event.subtitle}
-            value={values[field]} onChange={(choice) => update(field, choice)} error={errors[field]} allowMaybe />)}
-      {!isFinal && <div className="form-field">
-        <label htmlFor="comment">{settings.commentLabel}</label>
-        <textarea id="comment" name="comment" value={values.comment} onChange={(event) => update("comment", event.target.value)} maxLength={1000} rows={4} aria-invalid={Boolean(errors.comment)} />
-        {errors.comment && <p className="field-error">{errors.comment}</p>}
       </div>}
+      {isFinal ? <div className="rsvp-days">
+        {days.map(({ event, field }) => <DayAttendance key={event.id} event={event} names={names} people={attendanceByDay[field] ?? []}
+          open={openDay === field} onToggle={() => setOpenDay((current) => current === field ? undefined : field)}
+          incomplete={incompleteDay === field}
+          onChange={(people) => setAttendanceByDay((current) => ({ ...current, [field]: people }))} />)}
+      </div> : <>
+        <p className="form-instruction">{settings.attendancePromptLabel}</p>
+        {days.map(({ event, field }) => <AttendanceField key={event.id} fieldId={`attendance-${event.slug}`} title={event.title} subtitle={event.subtitle}
+          value={values[field]} onChange={(choice) => update(field, choice)} error={errors[field]} />)}
+        <div className="form-field">
+          <label htmlFor="comment">{settings.commentLabel}</label>
+          <textarea id="comment" name="comment" value={values.comment} onChange={(event) => update("comment", event.target.value)} maxLength={1000} rows={4} aria-invalid={Boolean(errors.comment)} />
+          {errors.comment && <p className="field-error">{errors.comment}</p>}
+        </div>
+      </>}
       <div className="honeypot" aria-hidden="true"><label htmlFor="website">Sitio web</label><input id="website" name="website" tabIndex={-1} autoComplete="off" /></div>
       {status && <p className="form-status" role="alert">{status}</p>}
       <button className="button button--olive form-submit" type="submit" disabled={isSending}>{isSending ? "ENVIANDO…" : settings.submitButtonLabel}</button>
