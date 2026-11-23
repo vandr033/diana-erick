@@ -120,6 +120,7 @@
 .frontPocket,
 .seamLines {
   position: absolute;
+  top: 0;
   left: 5%;
   width: 90%;
   height: 100%;
@@ -160,7 +161,6 @@
 
 .openFlap {
   z-index: 4;
-  top: 0;
   height: 50%;
   transform: perspective(1100px) rotateX(0deg) scaleY(1);
   transform-origin: 50% 0%;
@@ -586,6 +586,10 @@
   position: relative;
   top: auto;
   margin-top: var(--scene-top);
+}
+
+.root:is([data-state="closed"], [data-state="releasing-seal"]) .finalStage .scene {
+  max-height: calc(100svh - var(--scene-top) - 96px);
 }
 
 .finalStage .invitationCard {

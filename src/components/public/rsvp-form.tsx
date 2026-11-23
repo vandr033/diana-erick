@@ -32,11 +32,19 @@ const attendanceLabels: Record<Attendance, string> = {
   no: "No asistiré",
 };
 const personAttendanceLabels = { yes: "Va", no: "No va" };
+const groupAttendanceLabels = { yes: "Todos vamos", no: "Nadie va", some: "Algunos" };
+const groupTransportLabels = { yes: "Todos", no: "Nadie", some: "Algunos" };
 type PersonDraft = Omit<PersonRsvp, "attendance"> & { attendance: PersonRsvp["attendance"] | "" };
 
 const needsTransportAnswer = (person: PersonDraft) => person.attendance === "yes" && !person.transport;
 
-function AttendanceOptions<Choice extends Attendance>({ fieldId, value, onChange, labels, choices }: {
+function groupAnswer(answers: (PersonDraft["attendance"] | undefined)[]) {
+  const [first] = answers;
+  if (!first || answers.some((answer) => !answer)) return "";
+  return answers.every((answer) => answer === first) ? first : "some";
+}
+
+function AttendanceOptions<Choice extends string>({ fieldId, value, onChange, labels, choices }: {
   fieldId: string; value: Choice | ""; onChange: (value: Choice) => void;
   labels: Record<Choice, string>; choices: readonly Choice[];
 }) {
@@ -83,17 +91,31 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   incomplete: boolean;
   onChange: (people: PersonDraft[]) => void;
 }) {
+  const [customAttendance, setCustomAttendance] = useState(false);
+  const [customTransport, setCustomTransport] = useState(false);
   const panelId = `rsvp-${event.slug}`;
   const buttonId = `${panelId}-toggle`;
   const pending = people.some((person) => !person.attendance);
   const transportPending = people.some(needsTransportAnswer);
-  const attending = people.filter((person) => person.attendance === "yes").length;
+  const attendees = people.filter((person) => person.attendance === "yes");
+  const attending = attendees.length;
+  const hasGroup = people.length > 1;
   const summary = pending || transportPending ? "Pendiente" : people.length === 1
     ? (attending ? "Va" : "No va")
     : (attending ? `${attending} de ${people.length} asisten` : "Nadie va");
   const hasComments = people.some((person) => person.comment?.trim());
   const updatePerson = (index: number, change: Partial<PersonDraft>) => {
     onChange(people.map((person, position) => position === index ? { ...person, ...change } : person));
+  };
+  const answerAttendance = (answer: "yes" | "no" | "some") => {
+    setCustomAttendance(answer === "some");
+    if (answer === "some") return;
+    onChange(people.map((person) => ({ ...person, attendance: answer, transport: answer === "yes" ? person.transport : undefined })));
+  };
+  const answerTransport = (answer: "yes" | "no" | "some") => {
+    setCustomTransport(answer === "some");
+    if (answer === "some") return;
+    onChange(people.map((person) => person.attendance === "yes" ? { ...person, transport: answer } : person));
   };
 
   return <div className="rsvp-day">
@@ -104,12 +126,15 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
       </button>
     </h3>
     <div id={panelId} role="group" aria-labelledby={buttonId} hidden={!open}>
-      {names.length > 1 && <div className="rsvp-day__shortcuts">
-        <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "yes" })))}>Todos vamos</button>
-        <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "no", transport: undefined })))}>Nadie va</button>
-      </div>}
-      {incomplete && pending && <p className="field-error rsvp-day__error" role="alert">Elige Va o No va para cada persona.</p>}
-      {people.map((person, index) => {
+      <div className="rsvp-day__choices" role="group" aria-label="Asistencia">
+        {hasGroup
+          ? <AttendanceOptions fieldId={`${panelId}-attendance`} value={customAttendance ? "some" : groupAnswer(people.map((person) => person.attendance))}
+              onChange={answerAttendance} labels={groupAttendanceLabels} choices={["yes", "no", "some"]} />
+          : <AttendanceOptions fieldId={`${panelId}-attendance`} value={people[0]?.attendance ?? ""}
+              onChange={answerAttendance} labels={personAttendanceLabels} choices={["yes", "no"]} />}
+      </div>
+      {incomplete && pending && <p className="field-error rsvp-day__error" role="alert">Completa la asistencia antes de enviar.</p>}
+      {hasGroup && customAttendance && people.map((person, index) => {
         const personId = `${panelId}-person-${index}`;
         return <div className="rsvp-person" role="group" aria-labelledby={`${personId}-name`} key={index}>
           <span id={`${personId}-name`}>{names[index]}</span>
@@ -130,8 +155,15 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
               window.history.pushState({ fromInvitationRsvp: true }, "", url);
             }}>Info</Link>
         </div>
-        {incomplete && !pending && transportPending && <p className="field-error rsvp-day__error" role="alert">Indica si cada persona que asiste necesita transporte.</p>}
-        {people.map((person, index) => {
+        {!pending && attending > 0 && <div className="rsvp-day__choices">
+          {attending > 1
+            ? <AttendanceOptions fieldId={`${panelId}-transport`} value={customTransport ? "some" : groupAnswer(attendees.map((person) => person.transport))}
+                onChange={answerTransport} labels={groupTransportLabels} choices={["yes", "no", "some"]} />
+            : <AttendanceOptions fieldId={`${panelId}-transport`} value={attendees[0].transport ?? ""}
+                onChange={answerTransport} labels={transportLabels} choices={["yes", "no"]} />}
+        </div>}
+        {incomplete && !pending && transportPending && <p className="field-error rsvp-day__error" role="alert">Indica quién necesita transporte antes de enviar.</p>}
+        {!pending && attending > 1 && customTransport && people.map((person, index) => {
           if (person.attendance !== "yes") return null;
           const id = `${panelId}-transport-${index}`;
           return <div className="rsvp-person" role="group" aria-labelledby={`${id}-name`} key={id}>
