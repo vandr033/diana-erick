@@ -53,6 +53,8 @@ export const siteSettings = sqliteTable("site_settings", {
   transportMessage: text("transport_message").notNull().default("Para su comodidad, habrá transporte desde {hotel} hacia {eventos}. Si se hospedan en otro lugar, les pedimos coordinar su traslado a {hotel} o llegar directamente al lugar de cada evento."),
   defaultWhatsappMessage: text("default_whatsapp_message").notNull().default("Hola {name}, nos encantaría que nos acompañes en nuestra boda.\n\nPuedes ver tu invitación y confirmar tu asistencia aquí:\n{link}"),
   finalInvitationDetails: text("final_invitation_details").notNull().default(""),
+  dianaParents: text("diana_parents").notNull().default(""),
+  erickParents: text("erick_parents").notNull().default(""),
   updatedAt: timestamp("updated_at"),
 });
 

@@ -27,7 +27,7 @@ export default async function FinalInvitationsPage({ searchParams }: { searchPar
       <div className="admin-actions">
         <Link className="admin-button admin-button--secondary" href={{ pathname: "/admin/responses" }}>Invitar desde el Save the Date</Link>
         <Link className="admin-button admin-button--secondary" href={{ pathname: "/admin/responses", query: { phase: "final" } }}>Ver confirmaciones de boda</Link>
-        <Link className="admin-button admin-button--secondary" href={{ pathname: "/admin/content", hash: "content-finalInvitationDetails" }}>Editar detalles</Link>
+        <Link className="admin-button admin-button--secondary" href={{ pathname: "/admin/content", hash: "invitacion-final" }}>Editar contenido</Link>
       </div>
     </div>
     {respuesta && !source && <p className="admin-error" role="alert">No encontramos la respuesta del Save the Date.</p>}

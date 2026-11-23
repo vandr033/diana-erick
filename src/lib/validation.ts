@@ -5,6 +5,11 @@ import { maxCompanions } from "@/src/lib/invitation-party";
 const requiredText = (message: string, max = 500) =>
   z.string().trim().min(1, message).max(max, `No puede superar los ${max} caracteres.`);
 
+const parentNames = z.string().trim().max(201).refine((value) => {
+  const lines = value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  return lines.length <= 2 && lines.every((line) => line.length <= 100);
+}, "Ingresa hasta dos nombres, uno por línea, de máximo 100 caracteres cada uno.").optional();
+
 export const companionNames = z.array(z.string().trim().max(150, "El nombre de un acompañante no puede superar los 150 caracteres."))
   .max(maxCompanions, `Puedes agregar hasta ${maxCompanions} acompañantes.`);
 export const saturdayAttendanceSchema = z.array(z.enum(["yes", "no"])).max(maxCompanions + 1);
@@ -76,6 +81,8 @@ export const contentSchema = z.object({
   transportMessage: requiredText("Ingresa el mensaje de transporte.", 600),
   defaultWhatsappMessage: requiredText("Ingresa el mensaje predeterminado de WhatsApp.", 2000),
   finalInvitationDetails: z.string().trim().max(5000, "Los detalles no pueden superar los 5.000 caracteres.").optional(),
+  dianaParents: parentNames,
+  erickParents: parentNames,
 });
 
 export const settingsSchema = z.object({

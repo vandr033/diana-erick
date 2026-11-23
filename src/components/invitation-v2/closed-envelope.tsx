@@ -61,7 +61,7 @@ export function ClosedEnvelope({
   const isOpened = state === "opened";
 
   return (
-    <section id="inicio" className={styles.invitationStage}>
+    <section id="inicio" className={content.parents ? `${styles.invitationStage} ${styles.finalStage}` : styles.invitationStage}>
       <header className={styles.closedHeader} aria-hidden={state !== "closed"}>
         <span>{content.headerDate}</span>
         <span className={styles.closedFlowerFrame}><Image src="/images/hero-flower-placeholder.png" alt="" width={279} height={164} className={styles.closedFlowerImage} priority /></span>

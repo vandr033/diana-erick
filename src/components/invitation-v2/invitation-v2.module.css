@@ -19,6 +19,7 @@
 
 .invitationStage {
   --scene-width: min(94vw, 390px);
+  --scene-top: clamp(188px, 24svh, 225px);
   position: relative;
   z-index: 2;
   min-height: 100svh;
@@ -78,7 +79,7 @@
   --drag-progress: 0;
   position: absolute;
   z-index: 3;
-  top: clamp(188px, 24svh, 225px);
+  top: var(--scene-top);
   left: 50%;
   width: var(--scene-width);
   aspect-ratio: 0.823 / 1;
@@ -576,6 +577,83 @@
   display: block;
 }
 
+.finalStage {
+  display: flow-root;
+  overflow: clip;
+}
+
+.finalStage .scene {
+  position: relative;
+  top: auto;
+  margin-top: var(--scene-top);
+}
+
+.finalStage .invitationCard {
+  position: relative;
+  aspect-ratio: auto;
+}
+
+.finalStage .cardContents {
+  height: auto;
+  min-height: calc(var(--scene-width) * 1.4);
+  padding-block: clamp(29px, 8%, 46px) clamp(26px, 7%, 40px);
+}
+
+.blessing {
+  color: var(--olive-dark);
+  font-family: var(--font-display), serif;
+  font-size: clamp(0.85rem, 3.5vw, 1.22rem);
+  font-weight: 600;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.parentNames {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  gap: clamp(10px, 3vw, 22px);
+  margin-top: 13px;
+  color: var(--olive-dark);
+  font-family: var(--font-display), serif;
+  font-size: clamp(0.9rem, 3vw, 1.12rem);
+  font-weight: 500;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.parentNames span {
+  display: block;
+}
+
+.finalStage .coupleNames {
+  margin-top: clamp(19px, 5vw, 30px);
+  font-size: clamp(2.55rem, 12vw, 4.5rem);
+}
+
+.conjunction {
+  color: var(--olive);
+  font-size: 0.72em;
+  text-transform: none;
+}
+
+.finalStage .cardIntroduction {
+  margin-top: 0;
+}
+
+.finalStage .cardDate {
+  margin-top: clamp(13px, 3vw, 20px);
+}
+
+.finalStage .cardLocation {
+  margin-top: 6px;
+}
+
+.finalStage .discoverButton {
+  margin-block: clamp(17px, 4vw, 26px) 0;
+}
+
 .cardLocation {
   margin-top: clamp(15px, 3.7%, 24px);
   font-family: var(--font-display), serif;
@@ -688,6 +766,10 @@
     0 24px 42px oklch(35% 0.025 70 / 0.18),
     0 4px 8px oklch(35% 0.025 70 / 0.1);
   transform: translate3d(0, -20%, 0) rotate(0deg) scale(1);
+}
+
+.root:is([data-state="raising-card"], [data-state="opened"]) .finalStage .invitationCard {
+  transform: translate3d(0, max(-20%, -110px), 0);
 }
 
 .root[data-state="raising-card"] .scene,
@@ -815,14 +897,11 @@
 @media (max-height: 760px) {
   .invitationStage {
     --scene-width: min(80vw, 55svh, 390px);
+    --scene-top: clamp(118px, 20svh, 152px);
   }
 
   .closedHeader {
     top: max(28px, env(safe-area-inset-top));
-  }
-
-  .scene {
-    top: clamp(118px, 20svh, 152px);
   }
 
   .openingHint {
@@ -834,6 +913,7 @@
 @media (max-width: 359px) {
   .invitationStage {
     --scene-width: min(94vw, 48svh, 332px);
+    --scene-top: clamp(160px, 23svh, 196px);
   }
 
   .closedHeader {
@@ -847,10 +927,6 @@
   }
 
   .closedFlowerFrame { width: 46px; height: 58px; }
-
-  .scene {
-    top: clamp(160px, 23svh, 196px);
-  }
 
   .cardContents {
     padding-inline: 25px;

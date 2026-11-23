@@ -18,11 +18,17 @@ export function InvitationCard({
   interactive = false,
   onDiscover,
 }: InvitationCardProps) {
+  const { parents } = content;
+  const introduction = (
+    <p className={styles.cardIntroduction}>
+      {content.introduction.split("\n").map((line, index) => <span key={index}>{line}</span>)}
+    </p>
+  );
   const names = (
     <>
       <span>{content.coupleNameOne}</span>
       <span className={styles.secondNameLine}>
-        <span className={styles.ampersand}>&amp;</span>
+        <span className={parents ? styles.conjunction : styles.ampersand}>{parents ? "y" : "&"}</span>
         <span>{content.coupleNameTwo}</span>
       </span>
     </>
@@ -38,6 +44,16 @@ export function InvitationCard({
         className={styles.cardBotanicalImage}
         priority
       />
+      {parents && <>
+        <p className={styles.blessing}>Con la bendición de Dios<br /> y de nuestros padres</p>
+        {(parents.diana.length > 0 || parents.erick.length > 0) && (
+          <div className={styles.parentNames}>
+            {[parents.diana, parents.erick].filter((family) => family.length > 0).map((family, index) => (
+              <p key={index}>{family.map((name, position) => <span key={position}>{name}</span>)}</p>
+            ))}
+          </div>
+        )}
+      </>}
       {interactive ? (
         <h1
           ref={headingRef}
@@ -53,12 +69,9 @@ export function InvitationCard({
       <span className={styles.cardOrnament} aria-hidden="true">
         <span />
       </span>
+      {parents && introduction}
       <p className={styles.cardDate}>{content.formattedDateRange}</p>
-      <p className={styles.cardIntroduction}>
-        {content.introduction.split("\n").map((line) => (
-          <span key={line}>{line}</span>
-        ))}
-      </p>
+      {!parents && introduction}
       {content.location && (
         <p className={styles.cardLocation}>{content.location}</p>
       )}

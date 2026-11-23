@@ -16,13 +16,16 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
   const visibleEvents = saturdayOnly ? allEvents.filter((event) => event.slug === "sabado") : allEvents;
   const invitationEvents = withInvitationEventArtwork(visibleEvents);
   const targetEvent = saturdayOnly ? saturdayEvent || visibleEvents[0] : visibleEvents[0];
-  const content = createInvitationContent(settings, saturdayOnly && saturdayEvent ? {
-    dateLabel: formatDayMonth(saturdayEvent.date),
-    yearLabel: saturdayEvent.date.slice(0, 4),
-    introduction: `Te invitamos a compartir con nosotros\nen nuestra boda el ${formatLongDate(saturdayEvent.date)}`,
-    discoverLabel: "Descubrir la celebración",
+  const content = createInvitationContent(settings, {
+    ...(saturdayOnly && saturdayEvent && {
+      dateLabel: formatDayMonth(saturdayEvent.date),
+      yearLabel: saturdayEvent.date.slice(0, 4),
+      introduction: `Te invitamos a compartir con nosotros\nen nuestra boda el ${formatLongDate(saturdayEvent.date)}`,
+      discoverLabel: "Descubrir la celebración",
+    }),
     recipientName: initialName,
-  } : initialName ? { recipientName: initialName } : undefined);
+    phase,
+  });
 
   return (
     <InvitationExperience content={content}>

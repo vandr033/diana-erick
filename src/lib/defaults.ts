@@ -2,6 +2,8 @@ import type { Event, SiteSettings } from "@/src/db/schema";
 
 export const defaultSettings: SiteSettings = {
   finalInvitationDetails: "",
+  dianaParents: "",
+  erickParents: "",
   id: 1,
   coupleNames: "DIANA\n& ERICK",
   heroDateLabel: "9–11 ABRIL",
