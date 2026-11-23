@@ -3,7 +3,8 @@ import { db } from "@/src/db/client";
 import { getEvents, getSettings } from "@/src/db/queries";
 import { rsvpResponses, type PartyResponse } from "@/src/db/schema";
 import { getInvitationGuest } from "@/src/lib/invitation-guests";
-import { rsvpSchema, saturdayAttendanceSchema } from "@/src/lib/validation";
+import { rsvpDays } from "@/src/lib/invitation-party";
+import { attendanceByDaySchema, rsvpSchema, saturdayAttendanceSchema } from "@/src/lib/validation";
 import { newId } from "@/src/lib/utils";
 
 export async function handleRsvpSubmission(request: Request, scope: "all" | "saturday") {
@@ -27,8 +28,24 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
           return NextResponse.json({ message: "Tu lista de invitados cambió. Vuelve a abrir la invitación para confirmar." }, { status: 409 });
         }
       }
-      if (companions.length) party = { companions };
-      if (party && saturdayOnly) {
+      if (body.attendanceByDay !== undefined) {
+        const answers = attendanceByDaySchema.safeParse(body.attendanceByDay);
+        if (!answers.success) {
+          return NextResponse.json({ message: "Elige Va o No va para cada persona. Cada comentario puede tener hasta 1.000 caracteres." }, { status: 400 });
+        }
+        for (const { slug, field } of rsvpDays) {
+          const invited = (!saturdayOnly || slug === "sabado") && events.some((event) => event.slug === slug);
+          const people = answers.data[field];
+          if ((!invited && people !== undefined) || (invited && people?.length !== companions.length + 1)) {
+            return NextResponse.json({ message: "Confirma la asistencia de cada persona para los días de tu invitación." }, { status: 400 });
+          }
+          body[field] = people?.some((person) => person.attendance === "yes") ? "yes" : "no";
+        }
+        party = { companions, attendanceByDay: answers.data };
+      } else if (companions.length) {
+        party = { companions };
+      }
+      if (party && !party.attendanceByDay && saturdayOnly) {
         const answers = saturdayAttendanceSchema.safeParse(events.some((event) => event.slug === "sabado")
           ? body.saturdayAttendance
           : Array(companions.length + 1).fill("no"));
@@ -38,7 +55,7 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
         party.saturdayAttendance = answers.data;
         body.attendsSaturday = answers.data.includes("yes") ? "yes" : "no";
       }
-      for (const [slug, field] of [["viernes", "attendsFriday"], ["sabado", "attendsSaturday"], ["domingo", "attendsSunday"]]) {
+      for (const { slug, field } of rsvpDays) {
         if (!events.some((event) => event.slug === slug)) body[field] = "no";
       }
     }

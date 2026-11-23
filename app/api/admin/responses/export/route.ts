@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
-import { and, desc } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { responseFilterConditions } from "@/src/db/queries";
-import { rsvpResponses, type Attendance } from "@/src/db/schema";
+import { invitationGuests, rsvpResponses, type Attendance } from "@/src/db/schema";
 import { requireAdminApi } from "@/src/lib/auth";
 import { formatDateTime } from "@/src/lib/dates";
-import { attendanceCount, companionLabel } from "@/src/lib/invitation-party";
+import { companionLabel, rsvpDays } from "@/src/lib/invitation-party";
 
 export const runtime = "nodejs";
 
@@ -16,12 +16,42 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const filters = { phase: url.searchParams.get("phase") || "", q: url.searchParams.get("q") || "", event: url.searchParams.get("event") || "", attendance: url.searchParams.get("attendance") || "", dateFrom: url.searchParams.get("dateFrom") || "", dateTo: url.searchParams.get("dateTo") || "" };
     const conditions = responseFilterConditions(filters);
-    const rows = await db.select().from(rsvpResponses).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(rsvpResponses.submittedAt));
+    const where = and(...conditions);
     const attendanceLabel: Record<Attendance, string> = { yes: "Sí", maybe: "Tal vez", no: "No" };
-    const isFinal = filters.phase === "final";
-    const responseRows = rows.map((row) => {
-      const companions = row.party?.companions.map(companionLabel) ?? [];
-      return {
+    const workbook = XLSX.utils.book_new();
+    if (filters.phase === "final") {
+      const rows = await db.select({ response: rsvpResponses, phoneNumber: invitationGuests.phoneNumber })
+        .from(rsvpResponses)
+        .leftJoin(invitationGuests, eq(invitationGuests.id, rsvpResponses.invitationGuestId))
+        .where(where)
+        .orderBy(desc(rsvpResponses.submittedAt));
+      for (const [index, { field }] of rsvpDays.entries()) {
+        const dayRows = rows.flatMap(({ response: row, phoneNumber }) => {
+          const names = [row.fullName, ...(row.party?.companions.map(companionLabel) ?? [])];
+          const digits = phoneNumber?.replace(/\D/g, "") ?? "";
+          const whatsapp = /^\d{8,15}$/.test(digits) ? `https://wa.me/${digits}` : "";
+          if (row.party?.attendanceByDay) {
+            return (row.party.attendanceByDay[field] ?? []).map((person, position) => [
+              names[position], attendanceLabel[person.attendance], person.comment ?? "", whatsapp,
+            ]);
+          }
+          const saturdayAttendance = row.party?.saturdayAttendance;
+          if (saturdayAttendance && field !== "attendsSaturday") return [];
+          return names.map((name, position) => [
+            name, attendanceLabel[saturdayAttendance?.[position] ?? row[field]], position === 0 ? row.comment ?? "" : "", whatsapp,
+          ]);
+        });
+        const sheet = XLSX.utils.aoa_to_sheet([["Nombre", "Si/No", "Comentario", "WhatsApp"], ...dayRows]);
+        dayRows.forEach(([, , , whatsapp], rowIndex) => {
+          if (whatsapp) XLSX.utils.cell_set_hyperlink(sheet[`D${rowIndex + 2}`], whatsapp);
+        });
+        sheet["!cols"] = [{ wch: 35 }, { wch: 12 }, { wch: 60 }, { wch: 32 }];
+        sheet["!autofilter"] = { ref: `A1:D${dayRows.length + 1}` };
+        XLSX.utils.book_append_sheet(workbook, sheet, `Day ${index + 1}`);
+      }
+    } else {
+      const rows = await db.select().from(rsvpResponses).where(where).orderBy(desc(rsvpResponses.submittedAt));
+      const responseRows = rows.map((row) => ({
         "Nombre completo": row.fullName,
         "Viernes 9 de abril": attendanceLabel[row.attendsFriday],
         "Sábado 10 de abril": attendanceLabel[row.attendsSaturday],
@@ -30,52 +60,33 @@ export async function GET(request: Request) {
         "Fecha de respuesta": formatDateTime(row.submittedAt),
         "Última actualización": formatDateTime(row.updatedAt),
         "Origen": row.source === "admin" ? "Administrador" : "Invitado",
-        ...(isFinal && {
-          "Acompañantes": companions.join(", "),
-          "Asistencia individual del sábado": row.party?.saturdayAttendance?.map((choice, index) => {
-            const name = index === 0 ? row.fullName : companions[index - 1];
-            return `${name} (${attendanceLabel[choice]})`;
-          }).join(", ") ?? "",
-          "Personas confirmadas el viernes": attendanceCount(row, "attendsFriday"),
-          "Personas confirmadas el sábado": attendanceCount(row, "attendsSaturday"),
-          "Personas confirmadas el domingo": attendanceCount(row, "attendsSunday"),
-        }),
-      };
-    });
-    const confirmations = rows.filter((row) => row.attendsFriday === "yes" || row.attendsSaturday === "yes" || row.attendsSunday === "yes").length;
-    const summaryRows = [
-      { Métrica: "Total de respuestas", Valor: rows.length },
-      { Métrica: "Confirmaciones", Valor: confirmations },
-      { Métrica: "No asisten a ningún evento", Valor: rows.filter((row) => row.attendsFriday === "no" && row.attendsSaturday === "no" && row.attendsSunday === "no").length },
-      { Métrica: "Asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "yes").length },
-      { Métrica: "Tal vez asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "maybe").length },
-      { Métrica: "No asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "no").length },
-      { Métrica: "Asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "yes").length },
-      { Métrica: "Tal vez asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "maybe").length },
-      { Métrica: "No asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "no").length },
-      { Métrica: "Asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "yes").length },
-      { Métrica: "Tal vez asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "maybe").length },
-      { Métrica: "No asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "no").length },
-      ...(isFinal ? ([
-        ["Personas confirmadas el viernes", "attendsFriday"],
-        ["Personas confirmadas el sábado", "attendsSaturday"],
-        ["Personas confirmadas el domingo", "attendsSunday"],
-      ] as const).map(([Métrica, day]) => ({
-        Métrica, Valor: rows.reduce((total, row) => total + attendanceCount(row, day), 0),
-      })) : []),
-      { Métrica: "Fecha de generación", Valor: formatDateTime(new Date()) },
-      { Métrica: "Filtros aplicados", Valor: [filters.q, filters.event, filters.attendance, filters.dateFrom, filters.dateTo].some(Boolean) ? "Sí" : "No" },
-    ];
-    const workbook = XLSX.utils.book_new();
-    const responsesSheet = XLSX.utils.json_to_sheet(responseRows);
-    responsesSheet["!cols"] = [{ wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 42 }, { wch: 24 }, { wch: 24 }, { wch: 16 }];
-    if (isFinal) responsesSheet["!cols"].push({ wch: 35 }, { wch: 52 }, { wch: 30 }, { wch: 30 }, { wch: 30 });
-    responsesSheet["!autofilter"] = { ref: `A1:${isFinal ? "M" : "H"}${Math.max(responseRows.length + 1, 2)}` };
-    responsesSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
-    XLSX.utils.book_append_sheet(workbook, responsesSheet, "RESPUESTAS");
-    const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
-    summarySheet["!cols"] = [{ wch: 34 }, { wch: 24 }];
-    XLSX.utils.book_append_sheet(workbook, summarySheet, "RESUMEN");
+      }));
+      const confirmations = rows.filter((row) => row.attendsFriday === "yes" || row.attendsSaturday === "yes" || row.attendsSunday === "yes").length;
+      const summaryRows = [
+        { Métrica: "Total de respuestas", Valor: rows.length },
+        { Métrica: "Confirmaciones", Valor: confirmations },
+        { Métrica: "No asisten a ningún evento", Valor: rows.filter((row) => row.attendsFriday === "no" && row.attendsSaturday === "no" && row.attendsSunday === "no").length },
+        { Métrica: "Asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "yes").length },
+        { Métrica: "Tal vez asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "maybe").length },
+        { Métrica: "No asisten el viernes", Valor: rows.filter((row) => row.attendsFriday === "no").length },
+        { Métrica: "Asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "yes").length },
+        { Métrica: "Tal vez asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "maybe").length },
+        { Métrica: "No asisten el sábado", Valor: rows.filter((row) => row.attendsSaturday === "no").length },
+        { Métrica: "Asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "yes").length },
+        { Métrica: "Tal vez asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "maybe").length },
+        { Métrica: "No asisten el domingo", Valor: rows.filter((row) => row.attendsSunday === "no").length },
+        { Métrica: "Fecha de generación", Valor: formatDateTime(new Date()) },
+        { Métrica: "Filtros aplicados", Valor: [filters.q, filters.event, filters.attendance, filters.dateFrom, filters.dateTo].some(Boolean) ? "Sí" : "No" },
+      ];
+      const responsesSheet = XLSX.utils.json_to_sheet(responseRows);
+      responsesSheet["!cols"] = [{ wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 42 }, { wch: 24 }, { wch: 24 }, { wch: 16 }];
+      responsesSheet["!autofilter"] = { ref: `A1:H${Math.max(responseRows.length + 1, 2)}` };
+      responsesSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+      XLSX.utils.book_append_sheet(workbook, responsesSheet, "RESPUESTAS");
+      const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
+      summarySheet["!cols"] = [{ wch: 34 }, { wch: 24 }];
+      XLSX.utils.book_append_sheet(workbook, summarySheet, "RESUMEN");
+    }
     const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" }) as Buffer;
     const filename = `confirmaciones-diana-erick-${new Date().toISOString().slice(0, 10)}.xlsx`;
     return new NextResponse(new Uint8Array(buffer), { status: 200, headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="${filename}"`, "Cache-Control": "no-store" } });

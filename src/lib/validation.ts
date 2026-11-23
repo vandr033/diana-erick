@@ -13,6 +13,15 @@ const parentNames = z.string().trim().max(201).refine((value) => {
 export const companionNames = z.array(z.string().trim().max(150, "El nombre de un acompañante no puede superar los 150 caracteres."))
   .max(maxCompanions, `Puedes agregar hasta ${maxCompanions} acompañantes.`);
 export const saturdayAttendanceSchema = z.array(z.enum(["yes", "no"])).max(maxCompanions + 1);
+const personRsvpsSchema = z.array(z.object({
+  attendance: z.enum(["yes", "no"]),
+  comment: z.string().trim().max(1000).optional(),
+})).max(maxCompanions + 1);
+export const attendanceByDaySchema = z.strictObject({
+  attendsFriday: personRsvpsSchema.optional(),
+  attendsSaturday: personRsvpsSchema.optional(),
+  attendsSunday: personRsvpsSchema.optional(),
+});
 
 export const rsvpSchema = z.object({
   fullName: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(150, "El nombre no puede superar los 150 caracteres."),
@@ -26,6 +35,7 @@ export const rsvpSchema = z.object({
 export const responseAdminSchema = rsvpSchema.omit({ honeypot: true }).extend({
   source: z.enum(["public", "admin"]).optional(),
   saturdayAttendance: saturdayAttendanceSchema.optional(),
+  attendanceByDay: attendanceByDaySchema.optional(),
 });
 
 export const manualInvitationGuestSchema = z.object({

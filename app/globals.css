@@ -157,7 +157,16 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .attendance-field legend small { font-family: var(--font-sans), sans-serif; color: var(--color-muted); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
 .attendance-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .attendance-options--binary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.rsvp-companions { color: var(--color-olive-dark); font-size: 14px; overflow-wrap: anywhere; }
+.rsvp-day, .rsvp-person > .attendance-field { min-width: 0; }
+.rsvp-day { gap: 20px; }
+.rsvp-day > legend { gap: 10px; }
+.rsvp-day > legend small { text-align: right; }
+.rsvp-day button.attendance-option { justify-content: center; color: var(--color-olive-dark); font-weight: 600; }
+.rsvp-person { display: grid; gap: 6px; }
+.rsvp-person .attendance-field { padding-top: 8px; }
+.rsvp-person .attendance-field legend { font: 600 14px/1.4 var(--font-sans), sans-serif; overflow-wrap: anywhere; }
+.rsvp-comment-toggle { display: flex; align-items: center; gap: 8px; width: fit-content; min-height: 36px; font-size: 12px; cursor: pointer; }
+.rsvp-comment-toggle input { accent-color: var(--color-olive); }
 .attendance-option { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 9px 10px; border: 1px solid rgba(48, 55, 47, .2); background: color-mix(in srgb, var(--color-surface) 55%, transparent); cursor: pointer; font-size: 11px; transition: border-color .2s ease, background-color .2s ease; }
 .attendance-option:hover, .attendance-option.is-selected { border-color: var(--color-olive); background: color-mix(in srgb, var(--color-olive) 9%, var(--color-surface)); }
 .attendance-option input { accent-color: var(--color-olive); }
@@ -172,7 +181,8 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .confirmation__summary { display: grid; border-top: 1px solid rgba(48, 55, 47, .16); }
 .confirmation__summary div { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(48, 55, 47, .16); }
 .confirmation__summary dt { color: var(--color-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
-.confirmation__summary dd { margin: 0; font-size: 13px; white-space: pre-line; }
+.confirmation__summary dd { margin: 0; font-size: 13px; white-space: pre-line; overflow-wrap: anywhere; min-width: 0; }
+.confirmation__summary ul { display: grid; gap: 8px; }
 
 .deadline-section { min-height: 100svh; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .deadline-section__countdown-pane { min-width: 0; background: var(--color-cream-light); color: var(--color-olive-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(24px, 4svh, 42px); padding: clamp(52px, 7vw, 96px) clamp(18px, 4vw, 64px); overflow: hidden; }

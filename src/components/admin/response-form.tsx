@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Attendance, RsvpResponse } from "@/src/db/schema";
-import { companionLabel } from "@/src/lib/invitation-party";
+import { companionLabel, rsvpDays } from "@/src/lib/invitation-party";
 
 type Values = { fullName: string; attendsFriday: Attendance; attendsSaturday: Attendance; attendsSunday: Attendance; comment: string };
 const fromResponse = (response?: RsvpResponse): Values => ({
@@ -27,6 +27,7 @@ function AttendanceChoice({ label, value, onChange, disabled = false, binary = f
 export function ResponseForm({ response, mode = "edit" }: { response?: RsvpResponse; mode?: "new" | "edit" }) {
   const [values, setValues] = useState(() => fromResponse(response));
   const [saturdayAttendance, setSaturdayAttendance] = useState(response?.party?.saturdayAttendance);
+  const [attendanceByDay, setAttendanceByDay] = useState(response?.party?.attendanceByDay);
   const companions = response?.party?.companions ?? [];
   const isParty = companions.length > 0;
   const [saturdayOnly, setSaturdayOnly] = useState(() => response?.attendsFriday === "no" && response.attendsSunday === "no");
@@ -43,7 +44,7 @@ export function ResponseForm({ response, mode = "edit" }: { response?: RsvpRespo
     event.preventDefault(); setError(""); setMessage(""); setIsSaving(true);
     const endpoint = mode === "new" ? "/api/admin/responses" : `/api/admin/responses/${response?.id}`;
     try {
-      const result = await fetch(endpoint, { method: mode === "new" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, saturdayAttendance, source: "admin" }) });
+      const result = await fetch(endpoint, { method: mode === "new" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, saturdayAttendance, attendanceByDay, source: "admin" }) });
       const payload = await result.json() as { message?: string; id?: string };
       if (!result.ok) { setError(payload.message || "No fue posible guardar la respuesta."); return; }
       setMessage(mode === "new" ? "La respuesta se agregó correctamente." : "La respuesta se guardó correctamente.");
@@ -54,7 +55,27 @@ export function ResponseForm({ response, mode = "edit" }: { response?: RsvpRespo
 
   return <form className="admin-form response-form" onSubmit={submit}>
     <div className="admin-field"><label htmlFor="response-full-name">Nombre completo</label><input id="response-full-name" value={values.fullName} onChange={(event) => update("fullName", event.target.value)} required minLength={2} maxLength={150} /></div>
-    {saturdayAttendance ? <section className="admin-form-section" aria-label="Asistencia individual del sábado">
+    {attendanceByDay ? rsvpDays.map(({ field, label }) => {
+      const people = attendanceByDay[field];
+      if (!people) return null;
+      const names = [values.fullName, ...companions.map(companionLabel)];
+      return <section className="admin-form-section" key={field} aria-label={label}>
+        <h2>{label}</h2>
+        <div className="admin-form-grid admin-form-grid--three">
+          {people.map((person, index) => <div className="admin-field" key={index}>
+            <AttendanceChoice label={names[index]} value={person.attendance} binary onChange={(choice) => {
+              if (choice === "maybe") return;
+              setAttendanceByDay({ ...attendanceByDay, [field]: people.map((answer, position) => position === index ? { ...answer, attendance: choice } : answer) });
+            }} />
+            <label htmlFor={`${field}-comment-${index}`}>Comentario de {names[index]}</label>
+            <textarea id={`${field}-comment-${index}`} value={person.comment ?? ""} maxLength={1000} rows={3} onChange={(event) => {
+              const comment = event.target.value;
+              setAttendanceByDay({ ...attendanceByDay, [field]: people.map((answer, position) => position === index ? { ...answer, comment } : answer) });
+            }} />
+          </div>)}
+        </div>
+      </section>;
+    }) : saturdayAttendance ? <section className="admin-form-section" aria-label="Asistencia individual del sábado">
       <h2>Asistencia del sábado</h2>
       <div className="admin-form-grid admin-form-grid--three">
         {[values.fullName, ...companions.map(companionLabel)].map((name, index) => <AttendanceChoice key={index}
@@ -68,7 +89,7 @@ export function ResponseForm({ response, mode = "edit" }: { response?: RsvpRespo
         <label className="admin-toggle"><input type="checkbox" checked={saturdayOnly} onChange={(event) => updateSaturdayOnly(event.target.checked)} /><span>Solo sábado</span></label>}
       <div className="admin-form-grid admin-form-grid--three"><AttendanceChoice label="Viernes" value={values.attendsFriday} onChange={(value) => update("attendsFriday", value)} disabled={!isParty && saturdayOnly} binary={isParty} /><AttendanceChoice label="Sábado" value={values.attendsSaturday} onChange={(value) => update("attendsSaturday", value)} binary={isParty} /><AttendanceChoice label="Domingo" value={values.attendsSunday} onChange={(value) => update("attendsSunday", value)} disabled={!isParty && saturdayOnly} binary={isParty} /></div>
     </>}
-    <div className="admin-field"><label htmlFor="response-comment">Comentario adicional</label><textarea id="response-comment" value={values.comment} onChange={(event) => update("comment", event.target.value)} maxLength={1000} rows={5} /></div>
+    {(!attendanceByDay || response?.comment) && <div className="admin-field"><label htmlFor="response-comment">Comentario adicional</label><textarea id="response-comment" value={values.comment} onChange={(event) => update("comment", event.target.value)} maxLength={1000} rows={5} /></div>}
     {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-success" role="status">{message}</p>}
     <div className="admin-form-actions"><button className="admin-button admin-button--primary" type="submit" disabled={isSaving}>{isSaving ? "Guardando…" : "Guardar respuesta"}</button><Link className="admin-button admin-button--secondary" href={"/admin/responses" as never}>Cancelar</Link></div>
   </form>;

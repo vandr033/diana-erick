@@ -61,9 +61,13 @@ export const siteSettings = sqliteTable("site_settings", {
 export const attendanceValues = ["yes", "no", "maybe"] as const;
 export const invitationPhases = ["save-the-date", "final"] as const;
 export type InvitationPhase = (typeof invitationPhases)[number];
+export type AttendanceDay = "attendsFriday" | "attendsSaturday" | "attendsSunday";
+export type PersonRsvp = { attendance: "yes" | "no"; comment?: string };
+export type AttendanceByDay = Partial<Record<AttendanceDay, PersonRsvp[]>>;
 export type PartyResponse = {
   companions: string[];
   saturdayAttendance?: ("yes" | "no")[];
+  attendanceByDay?: AttendanceByDay;
 };
 
 export const events = sqliteTable(
