@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { responseFilterConditions } from "@/src/db/queries";
-import { invitationGuests, rsvpResponses, type Attendance } from "@/src/db/schema";
+import { rsvpResponses, type Attendance } from "@/src/db/schema";
 import { requireAdminApi } from "@/src/lib/auth";
 import { formatDateTime } from "@/src/lib/dates";
-import { companionLabel, rsvpDays, transportLabels, transportTotals } from "@/src/lib/invitation-party";
+import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
 
 export const runtime = "nodejs";
 
@@ -19,46 +19,49 @@ export async function GET(request: Request) {
     const where = and(...conditions);
     const attendanceLabel: Record<Attendance, string> = { yes: "Sí", maybe: "Tal vez", no: "No" };
     const workbook = XLSX.utils.book_new();
+    const rows = await db.select().from(rsvpResponses).where(where).orderBy(desc(rsvpResponses.submittedAt));
     if (filters.phase === "final") {
-      const rows = await db.select({ response: rsvpResponses, phoneNumber: invitationGuests.phoneNumber })
-        .from(rsvpResponses)
-        .leftJoin(invitationGuests, eq(invitationGuests.id, rsvpResponses.invitationGuestId))
-        .where(where)
-        .orderBy(desc(rsvpResponses.submittedAt));
-      for (const [index, { field }] of rsvpDays.entries()) {
-        const dayRows = rows.flatMap(({ response: row, phoneNumber }) => {
+      const summaryRows = rsvpDays.map(({ field, label }, index) => {
+        const dayRows = rows.flatMap((row) => {
           const names = [row.fullName, ...(row.party?.companions.map(companionLabel) ?? [])];
-          const digits = phoneNumber?.replace(/\D/g, "") ?? "";
-          const whatsapp = /^\d{8,15}$/.test(digits) ? `https://wa.me/${digits}` : "";
           if (row.party?.attendanceByDay) {
             return (row.party.attendanceByDay[field] ?? []).map((person, position) => [
-              names[position], attendanceLabel[person.attendance], person.comment ?? "", whatsapp,
+              names[position], attendanceLabel[person.attendance], person.comment ?? "",
               person.attendance === "yes" && person.transport ? transportLabels[person.transport] : "",
             ]);
           }
           const saturdayAttendance = row.party?.saturdayAttendance;
           if (saturdayAttendance && field !== "attendsSaturday") return [];
           return names.map((name, position) => [
-            name, attendanceLabel[saturdayAttendance?.[position] ?? row[field]], position === 0 ? row.comment ?? "" : "", whatsapp, "",
+            name, attendanceLabel[saturdayAttendance?.[position] ?? row[field]], position === 0 ? row.comment ?? "" : "", "",
           ]);
         });
-        const sheet = XLSX.utils.aoa_to_sheet([["Nombre", "Si/No", "Comentario", "WhatsApp", "Necesita transporte"], ...dayRows]);
-        dayRows.forEach(([, , , whatsapp], rowIndex) => {
-          if (whatsapp) XLSX.utils.cell_set_hyperlink(sheet[`D${rowIndex + 2}`], whatsapp);
-        });
-        sheet["!cols"] = [{ wch: 35 }, { wch: 12 }, { wch: 60 }, { wch: 32 }, { wch: 22 }];
-        sheet["!autofilter"] = { ref: `A1:E${dayRows.length + 1}` };
+        const sheet = XLSX.utils.aoa_to_sheet([["Nombre", "Sí/No", "Comentario", "Necesita transporte"], ...dayRows]);
+        sheet["!cols"] = [{ wch: 35 }, { wch: 12 }, { wch: 60 }, { wch: 22 }];
+        sheet["!autofilter"] = { ref: `A1:D${dayRows.length + 1}` };
         XLSX.utils.book_append_sheet(workbook, sheet, `Day ${index + 1}`);
-      }
-      const transport = transportTotals(rows.map(({ response }) => response));
+
+        const attendees = dayRows.filter(([, attendance]) => attendance === attendanceLabel.yes);
+        return [
+          label,
+          attendees.length,
+          dayRows.filter(([, attendance]) => attendance === attendanceLabel.no).length,
+          dayRows.filter(([, attendance]) => attendance === attendanceLabel.maybe).length,
+          attendees.filter(([, , , transport]) => transport === transportLabels.yes).length,
+          attendees.filter(([, , , transport]) => transport === transportLabels.no).length,
+          attendees.filter(([, , , transport]) => !transport).length,
+        ];
+      });
       const summarySheet = XLSX.utils.aoa_to_sheet([
-        ["Día", "Personas que necesitan transporte"],
-        ...transport.map(({ label, count }) => [label, count]),
+        ["Día", "Asisten", "No asisten", "Tal vez", "Necesitan transporte", "No necesitan transporte", "Transporte sin respuesta"],
+        ...summaryRows,
+        [],
+        ["Total de respuestas", rows.length],
+        ["Fecha de generación", formatDateTime(new Date())],
       ]);
-      summarySheet["!cols"] = [{ wch: 16 }, { wch: 36 }];
+      summarySheet["!cols"] = [{ wch: 23 }, { wch: 24 }, { wch: 13 }, { wch: 12 }, { wch: 24 }, { wch: 27 }, { wch: 27 }];
       XLSX.utils.book_append_sheet(workbook, summarySheet, "RESUMEN");
     } else {
-      const rows = await db.select().from(rsvpResponses).where(where).orderBy(desc(rsvpResponses.submittedAt));
       const responseRows = rows.map((row) => ({
         "Nombre completo": row.fullName,
         "Viernes 9 de abril": attendanceLabel[row.attendsFriday],
