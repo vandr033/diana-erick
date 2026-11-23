@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { FlightFeedback, FoodFeedback, MusicFeedback } from "@/src/lib/rsvp-feedback";
 import {
   integer,
   index,
@@ -108,6 +109,9 @@ export const rsvpResponses = sqliteTable(
     attendsSaturday: text("attends_saturday", { enum: attendanceValues }).notNull(),
     attendsSunday: text("attends_sunday", { enum: attendanceValues }).notNull(),
     comment: text("comment"),
+    foodFeedback: text("food_feedback", { mode: "json" }).$type<FoodFeedback>(),
+    musicFeedback: text("music_feedback", { mode: "json" }).$type<MusicFeedback>(),
+    flightFeedback: text("flight_feedback", { mode: "json" }).$type<FlightFeedback>(),
     source: text("source", { enum: ["public", "admin"] }).notNull().default("public"),
     submittedAt: timestamp("submitted_at"),
     updatedAt: timestamp("updated_at"),

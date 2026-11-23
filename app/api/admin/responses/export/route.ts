@@ -61,6 +61,31 @@ export async function GET(request: Request) {
       ]);
       summarySheet["!cols"] = [{ wch: 23 }, { wch: 24 }, { wch: 13 }, { wch: 12 }, { wch: 24 }, { wch: 27 }, { wch: 27 }];
       XLSX.utils.book_append_sheet(workbook, summarySheet, "RESUMEN");
+
+      const foodRows = rows.flatMap(({ fullName, foodFeedback }) => foodFeedback
+        ? [[fullName, foodFeedback.options.join(", "), foodFeedback.details]] : []);
+      const foodSheet = XLSX.utils.aoa_to_sheet([["Nombre", "Restricciones alimentarias", "Detalles"], ...foodRows]);
+      foodSheet["!cols"] = [{ wch: 32 }, { wch: 32 }, { wch: 50 }];
+      foodSheet["!autofilter"] = { ref: `A1:C${foodRows.length + 1}` };
+      XLSX.utils.book_append_sheet(workbook, foodSheet, "COMIDA");
+
+      const musicRows = rows.flatMap(({ fullName, musicFeedback }) => musicFeedback
+        ? [[fullName, musicFeedback.song, musicFeedback.style ?? ""]] : []);
+      const musicSheet = XLSX.utils.aoa_to_sheet([["Nombre", "Canción y artista", "Estilo"], ...musicRows]);
+      musicSheet["!cols"] = [{ wch: 32 }, { wch: 45 }, { wch: 20 }];
+      musicSheet["!autofilter"] = { ref: `A1:C${musicRows.length + 1}` };
+      XLSX.utils.book_append_sheet(workbook, musicSheet, "MÚSICA");
+
+      const flightRows = rows.flatMap(({ fullName, flightFeedback }) => flightFeedback ? [[
+        fullName,
+        flightFeedback.arrival.replace("T", " "),
+        flightFeedback.departure?.replace("T", " ") ?? "",
+        flightFeedback.notes,
+      ]] : []);
+      const flightSheet = XLSX.utils.aoa_to_sheet([["Nombre", "Llegada a SCZ (hora local)", "Salida de SCZ (hora local)", "Comentarios"], ...flightRows]);
+      flightSheet["!cols"] = [{ wch: 32 }, { wch: 28 }, { wch: 28 }, { wch: 50 }];
+      flightSheet["!autofilter"] = { ref: `A1:D${flightRows.length + 1}` };
+      XLSX.utils.book_append_sheet(workbook, flightSheet, "VUELOS");
     } else {
       const responseRows = rows.map((row) => ({
         "Nombre completo": row.fullName,

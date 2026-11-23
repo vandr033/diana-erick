@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import type { Attendance, AttendanceDay, Event, InvitationPhase, PartyResponse, PersonRsvp, SiteSettings } from "@/src/db/schema";
 import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
+import { RsvpFeedback } from "./rsvp-feedback";
 
 type Confirmation = {
   fullName: string;
@@ -12,6 +13,7 @@ type Confirmation = {
   attendsSunday: Attendance;
   comment: string | null;
   party?: PartyResponse | null;
+  feedbackReceipt?: string;
 };
 
 type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel">;
@@ -33,7 +35,6 @@ const attendanceLabels: Record<Attendance, string> = {
 };
 const personAttendanceLabels = { yes: "Va", no: "No va" };
 const groupAttendanceLabels = { yes: "Todos vamos", no: "Nadie va", some: "Algunos" };
-const groupTransportLabels = { yes: "Todos", no: "Nadie", some: "Algunos" };
 type PersonDraft = Omit<PersonRsvp, "attendance"> & { attendance: PersonRsvp["attendance"] | "" };
 
 const needsTransportAnswer = (person: PersonDraft) => person.attendance === "yes" && !person.transport;
@@ -92,13 +93,13 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   onChange: (people: PersonDraft[]) => void;
 }) {
   const [customAttendance, setCustomAttendance] = useState(false);
-  const [customTransport, setCustomTransport] = useState(false);
   const panelId = `rsvp-${event.slug}`;
   const buttonId = `${panelId}-toggle`;
   const pending = people.some((person) => !person.attendance);
   const transportPending = people.some(needsTransportAnswer);
   const attendees = people.filter((person) => person.attendance === "yes");
   const attending = attendees.length;
+  const transportAnswer = groupAnswer(attendees.map((person) => person.transport));
   const hasGroup = people.length > 1;
   const summary = pending || transportPending ? "Pendiente" : people.length === 1
     ? (attending ? "Va" : "No va")
@@ -112,9 +113,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
     if (answer === "some") return;
     onChange(people.map((person) => ({ ...person, attendance: answer, transport: answer === "yes" ? person.transport : undefined })));
   };
-  const answerTransport = (answer: "yes" | "no" | "some") => {
-    setCustomTransport(answer === "some");
-    if (answer === "some") return;
+  const answerTransport = (answer: "yes" | "no") => {
     onChange(people.map((person) => person.attendance === "yes" ? { ...person, transport: answer } : person));
   };
 
@@ -144,7 +143,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
       })}
       <div className="rsvp-transport" role="group" aria-labelledby={`${panelId}-transport-title`}>
         <div className="rsvp-transport__heading">
-          <h4 id={`${panelId}-transport-title`}>¿Van a necesitar transporte?</h4>
+          <h4 id={`${panelId}-transport-title`}>{hasGroup ? "¿Van a necesitar transporte?" : "¿Vas a necesitar transporte?"}</h4>
           <Link id={`transporte-${event.slug}`} href={`?transporte=${event.slug}`} prefetch={false}
             aria-label={`Información de transporte para ${event.title}`}
             onNavigate={(navigation) => {
@@ -156,22 +155,10 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
             }}>Info</Link>
         </div>
         {!pending && attending > 0 && <div className="rsvp-day__choices">
-          {attending > 1
-            ? <AttendanceOptions fieldId={`${panelId}-transport`} value={customTransport ? "some" : groupAnswer(attendees.map((person) => person.transport))}
-                onChange={answerTransport} labels={groupTransportLabels} choices={["yes", "no", "some"]} />
-            : <AttendanceOptions fieldId={`${panelId}-transport`} value={attendees[0].transport ?? ""}
-                onChange={answerTransport} labels={transportLabels} choices={["yes", "no"]} />}
+          <AttendanceOptions fieldId={`${panelId}-transport`} value={transportAnswer === "some" ? "" : transportAnswer}
+            onChange={answerTransport} labels={transportLabels} choices={["yes", "no"]} />
         </div>}
-        {incomplete && !pending && transportPending && <p className="field-error rsvp-day__error" role="alert">Indica quién necesita transporte antes de enviar.</p>}
-        {!pending && attending > 1 && customTransport && people.map((person, index) => {
-          if (person.attendance !== "yes") return null;
-          const id = `${panelId}-transport-${index}`;
-          return <div className="rsvp-person" role="group" aria-labelledby={`${id}-name`} key={id}>
-            <span id={`${id}-name`}>{names[index]}</span>
-            <AttendanceOptions fieldId={id} value={person.transport ?? ""} onChange={(transport) => updatePerson(index, { transport })}
-              labels={transportLabels} choices={["yes", "no"]} />
-          </div>;
-        })}
+        {incomplete && !pending && transportPending && <p className="field-error rsvp-day__error" role="alert">Responde Sí o No para el transporte.</p>}
       </div>
       <details className="rsvp-comments">
         <summary>{hasComments ? "Editar comentarios" : "Agregar comentarios (opcional)"}</summary>
@@ -266,6 +253,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         <p className="eyebrow">Respuesta recibida</p>
         <h3 tabIndex={-1} ref={confirmationRef}>{settings.confirmationTitle}</h3>
         <p className="confirmation__message">{settings.confirmationMessage}</p>
+        {confirmation.feedbackReceipt && <RsvpFeedback receipt={confirmation.feedbackReceipt} />}
         <dl className="confirmation__summary">
           <div><dt>Nombre</dt><dd>{confirmation.fullName}</dd></div>
           {days.map(({ event, field }) => {

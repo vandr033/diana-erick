@@ -1,0 +1,1 @@
+ALTER TABLE `rsvp_responses` ADD `flight_feedback` text;

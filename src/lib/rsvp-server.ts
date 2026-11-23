@@ -78,8 +78,10 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
       return NextResponse.json({ message: "Elige sí o no para confirmar la asistencia." }, { status: 400 });
     }
     const comment = parsed.data.comment?.trim() || null;
-    await db.insert(rsvpResponses).values({ id: newId(), fullName: parsed.data.fullName, invitationGuestId: invitationGuest?.id ?? null, phase, party, ...attendance, comment, source: "public", submittedAt: now, updatedAt: now });
-    return NextResponse.json({ confirmation: { ...parsed.data, ...attendance, comment, party } }, { status: 201 });
+    const id = newId();
+    await db.insert(rsvpResponses).values({ id, fullName: parsed.data.fullName, invitationGuestId: invitationGuest?.id ?? null, phase, party, ...attendance, comment, source: "public", submittedAt: now, updatedAt: now });
+    const feedbackReceipt = phase === "final" && Object.values(attendance).includes("yes") ? id : undefined;
+    return NextResponse.json({ confirmation: { ...parsed.data, ...attendance, comment, party, feedbackReceipt } }, { status: 201 });
   } catch (error) {
     console.error("Error al guardar RSVP", error instanceof Error ? error.message : error);
     return NextResponse.json({ message: "No fue posible guardar la respuesta. Intenta nuevamente." }, { status: 500 });

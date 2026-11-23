@@ -106,6 +106,20 @@
       "when": 1795401048986,
       "tag": "0014_dark_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1795406191678,
+      "tag": "0015_common_cyclops",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1795406637172,
+      "tag": "0016_legal_nitro",
+      "breakpoints": true
     }
   ]
 }
