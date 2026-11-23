@@ -12,6 +12,17 @@ export function companionLabel(name: string, index: number) {
   return name || `Acompañante ${index + 1}`;
 }
 
+export const transportLabels = { yes: "Sí", no: "No" };
+
+export function transportTotals(rows: Pick<RsvpResponse, "party">[]) {
+  return rsvpDays.map(({ field, label, slug }) => ({
+    label,
+    slug,
+    count: rows.reduce((total, row) => total + (row.party?.attendanceByDay?.[field]
+      ?.filter((person) => person.attendance === "yes" && person.transport === "yes").length ?? 0), 0),
+  }));
+}
+
 export function attendanceCount(
   response: RsvpResponse,
   day: AttendanceDay,

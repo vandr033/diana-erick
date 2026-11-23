@@ -14,7 +14,7 @@ export default async function ResponsesPage({ searchParams }: { searchParams: Se
   const isFinal = value(params.phase) === "final";
   const filters = { phase: isFinal ? "final" : "", q: value(params.q), event: value(params.event), attendance: value(params.attendance), dateFrom: value(params.dateFrom), dateTo: value(params.dateTo) };
   const requestedPage = Math.max(1, Number(value(params.page)) || 1);
-  const { rows, total } = await getResponses(filters, requestedPage);
+  const { rows, total, transport } = await getResponses(filters, requestedPage);
   const totalPages = Math.max(1, Math.ceil(total / 25));
   const currentPage = Math.min(requestedPage, totalPages);
   const query = new URLSearchParams(Object.entries(filters).filter(([, item]) => item));
@@ -26,6 +26,11 @@ export default async function ResponsesPage({ searchParams }: { searchParams: Se
       <Link className="admin-button admin-button--secondary" aria-current={isFinal ? "page" : undefined} href={{ pathname: "/admin/responses", query: { phase: "final" } }}>Invitación final</Link>
     </nav>
     <section className="admin-section admin-section--filters"><ResponseFilters key={filters.phase} initial={filters} /></section>
+    {transport && <section className="admin-section" aria-labelledby="transport-metrics">
+      <div className="admin-section-heading"><div><h2 id="transport-metrics">Personas que necesitan transporte</h2></div></div>
+      <div className="admin-stats-grid">{transport.map(({ slug, label, count }) =>
+        <div className="admin-stat" key={slug}><span>{label}</span><strong>{count}</strong></div>)}</div>
+    </section>}
     <section className="admin-section"><div className="admin-section-heading"><div><p className="admin-eyebrow">{total} resultados</p><h2>Registro de confirmaciones</h2></div></div>
       {rows.length ? <div className="responses-table-wrap"><table className="responses-table"><thead><tr><th>Nombre completo</th><th>Viernes</th><th>Sábado</th><th>Domingo</th><th>Comentario</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td data-label="Nombre"><strong>{row.fullName}</strong></td>{(["attendsFriday", "attendsSaturday", "attendsSunday"] as const).map((key, index) => <td data-label={["Viernes", "Sábado", "Domingo"][index]} key={key}><span className={`status-badge status-badge--${row[key]}`}>{row.party && row[key] === "yes" ? `${attendanceCount(row, key)} asisten` : attendanceLabel[row[key]]}</span></td>)}<td data-label="Comentario" className="response-comment">{row.comment || "—"}</td><td data-label="Fecha" className="response-date">{formatDateTime(row.submittedAt)}</td><td data-label="Acciones"><div className="admin-actions"><Link className="admin-text-link" href={`/admin/responses/${row.id}` as never}>Ver / editar</Link>{!isFinal && <Link className="admin-text-link" href={{ pathname: "/admin/invitaciones", query: { respuesta: row.id } }}>Invitar a la boda</Link>}<DeleteResponseButton id={row.id} reloadAfterDelete /></div></td></tr>)}</tbody></table></div> : <div className="admin-empty"><p>No se encontraron respuestas con los filtros seleccionados.</p>{!isFinal && <Link href={{ pathname: "/admin/responses/new" }}>Agregar una respuesta</Link>}</div>}
       {total > 25 && <div className="pagination"><span>Página {currentPage} de {totalPages}</span><div>{currentPage > 1 && <Link className="admin-button admin-button--secondary" href={`/admin/responses?${query.toString()}${query.toString() ? "&" : ""}page=${currentPage - 1}` as never}>Anterior</Link>}{currentPage < totalPages && <Link className="admin-button admin-button--secondary" href={`/admin/responses?${query.toString()}${query.toString() ? "&" : ""}page=${currentPage + 1}` as never}>Siguiente</Link>}</div></div>}

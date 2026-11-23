@@ -170,6 +170,11 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .rsvp-day__toggle[aria-expanded="true"]::after { transform: translateY(-2px) rotate(45deg); }
 .rsvp-day__shortcuts { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .rsvp-day__error { margin-bottom: 8px; }
+.rsvp-transport { border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent); }
+.rsvp-transport__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rsvp-transport__heading h4 { color: var(--color-olive-dark); font-size: 13px; font-weight: 600; }
+.rsvp-transport__heading a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 8px; color: var(--color-olive-dark); font-size: 12px; text-decoration: underline; text-underline-offset: .2em; }
+.transport-back { margin-top: 24px; }
 .rsvp-person { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent); padding-block: 5px; }
 .rsvp-person > span { color: var(--color-ink); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .rsvp-person .attendance-options { gap: 4px; }

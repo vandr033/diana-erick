@@ -2,6 +2,7 @@ import { and, count, desc, eq, gte, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "./client";
 import { events, invitationGuests, rsvpResponses, siteSettings, type InvitationPhase } from "./schema";
 import { defaultEvents, defaultSettings } from "@/src/lib/defaults";
+import { transportTotals } from "@/src/lib/invitation-party";
 
 function normalizeEventIconPath(event: typeof defaultEvents[number]) {
   if (!event.iconPath) return event;
@@ -56,13 +57,14 @@ export async function getResponses(filters: Parameters<typeof responseFilterCond
   const conditions = responseFilterConditions(filters);
   const where = conditions.length ? and(...conditions) : undefined;
   try {
-    const [rows, totalRows] = await Promise.all([
+    const [rows, totalRows, transportRows] = await Promise.all([
       db.select().from(rsvpResponses).where(where).orderBy(desc(rsvpResponses.submittedAt)).limit(pageSize).offset((page - 1) * pageSize),
       db.select({ value: count() }).from(rsvpResponses).where(where),
+      filters.phase === "final" ? db.select({ party: rsvpResponses.party }).from(rsvpResponses).where(where) : null,
     ]);
-    return { rows, total: totalRows[0]?.value ?? 0 };
+    return { rows, total: totalRows[0]?.value ?? 0, transport: transportRows ? transportTotals(transportRows) : null };
   } catch {
-    return { rows: [], total: 0 };
+    return { rows: [], total: 0, transport: null };
   }
 }
 

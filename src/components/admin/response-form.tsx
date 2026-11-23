@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Attendance, RsvpResponse } from "@/src/db/schema";
+import type { Attendance, PersonRsvp, RsvpResponse } from "@/src/db/schema";
 import { companionLabel, rsvpDays } from "@/src/lib/invitation-party";
 
 type Values = { fullName: string; attendsFriday: Attendance; attendsSaturday: Attendance; attendsSunday: Attendance; comment: string };
@@ -62,17 +62,29 @@ export function ResponseForm({ response, mode = "edit" }: { response?: RsvpRespo
       return <section className="admin-form-section" key={field} aria-label={label}>
         <h2>{label}</h2>
         <div className="admin-form-grid admin-form-grid--three">
-          {people.map((person, index) => <div className="admin-field" key={index}>
-            <AttendanceChoice label={names[index]} value={person.attendance} binary onChange={(choice) => {
-              if (choice === "maybe") return;
-              setAttendanceByDay({ ...attendanceByDay, [field]: people.map((answer, position) => position === index ? { ...answer, attendance: choice } : answer) });
-            }} />
-            <label htmlFor={`${field}-comment-${index}`}>Comentario de {names[index]}</label>
-            <textarea id={`${field}-comment-${index}`} value={person.comment ?? ""} maxLength={1000} rows={3} onChange={(event) => {
-              const comment = event.target.value;
-              setAttendanceByDay({ ...attendanceByDay, [field]: people.map((answer, position) => position === index ? { ...answer, comment } : answer) });
-            }} />
-          </div>)}
+          {people.map((person, index) => {
+            const updatePerson = (change: Partial<PersonRsvp>) => setAttendanceByDay((current) => ({
+              ...current,
+              [field]: current?.[field]?.map((answer, position) => position === index ? { ...answer, ...change } : answer),
+            }));
+            return <div className="admin-field" key={index}>
+              <AttendanceChoice label={names[index]} value={person.attendance} binary onChange={(choice) => {
+                if (choice === "maybe") return;
+                updatePerson({ attendance: choice, transport: choice === "yes" ? person.transport : undefined });
+              }} />
+              {person.attendance === "yes" && <>
+                <label htmlFor={`${field}-transport-${index}`}>Transporte de {names[index]}</label>
+                <select id={`${field}-transport-${index}`} value={person.transport ?? ""} onChange={(event) => {
+                  const transport = event.target.value;
+                  updatePerson({ transport: transport === "yes" || transport === "no" ? transport : undefined });
+                }}>
+                  <option value="">Sin respuesta</option><option value="yes">Sí</option><option value="no">No</option>
+                </select>
+              </>}
+              <label htmlFor={`${field}-comment-${index}`}>Comentario de {names[index]}</label>
+              <textarea id={`${field}-comment-${index}`} value={person.comment ?? ""} maxLength={1000} rows={3} onChange={(event) => updatePerson({ comment: event.target.value })} />
+            </div>;
+          })}
         </div>
       </section>;
     }) : saturdayAttendance ? <section className="admin-form-section" aria-label="Asistencia individual del sábado">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { Attendance, AttendanceDay, Event, InvitationPhase, PartyResponse, PersonRsvp, SiteSettings } from "@/src/db/schema";
-import { companionLabel, rsvpDays } from "@/src/lib/invitation-party";
+import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
 
 type Confirmation = {
   fullName: string;
@@ -32,6 +33,8 @@ const attendanceLabels: Record<Attendance, string> = {
 };
 const personAttendanceLabels = { yes: "Va", no: "No va" };
 type PersonDraft = Omit<PersonRsvp, "attendance"> & { attendance: PersonRsvp["attendance"] | "" };
+
+const needsTransportAnswer = (person: PersonDraft) => person.attendance === "yes" && !person.transport;
 
 function AttendanceOptions<Choice extends Attendance>({ fieldId, value, onChange, labels, choices }: {
   fieldId: string; value: Choice | ""; onChange: (value: Choice) => void;
@@ -83,8 +86,9 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   const panelId = `rsvp-${event.slug}`;
   const buttonId = `${panelId}-toggle`;
   const pending = people.some((person) => !person.attendance);
+  const transportPending = people.some(needsTransportAnswer);
   const attending = people.filter((person) => person.attendance === "yes").length;
-  const summary = pending ? "Pendiente" : people.length === 1
+  const summary = pending || transportPending ? "Pendiente" : people.length === 1
     ? (attending ? "Va" : "No va")
     : (attending ? `${attending} de ${people.length} asisten` : "Nadie va");
   const hasComments = people.some((person) => person.comment?.trim());
@@ -102,17 +106,41 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
     <div id={panelId} role="group" aria-labelledby={buttonId} hidden={!open}>
       {names.length > 1 && <div className="rsvp-day__shortcuts">
         <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "yes" })))}>Todos vamos</button>
-        <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "no" })))}>Nadie va</button>
+        <button type="button" onClick={() => onChange(people.map((person) => ({ ...person, attendance: "no", transport: undefined })))}>Nadie va</button>
       </div>}
       {incomplete && pending && <p className="field-error rsvp-day__error" role="alert">Elige Va o No va para cada persona.</p>}
       {people.map((person, index) => {
         const personId = `${panelId}-person-${index}`;
         return <div className="rsvp-person" role="group" aria-labelledby={`${personId}-name`} key={index}>
           <span id={`${personId}-name`}>{names[index]}</span>
-          <AttendanceOptions fieldId={personId} value={person.attendance} onChange={(attendance) => updatePerson(index, { attendance })}
+          <AttendanceOptions fieldId={personId} value={person.attendance} onChange={(attendance) => updatePerson(index, { attendance, transport: attendance === "yes" ? person.transport : undefined })}
             labels={personAttendanceLabels} choices={["yes", "no"]} />
         </div>;
       })}
+      <div className="rsvp-transport" role="group" aria-labelledby={`${panelId}-transport-title`}>
+        <div className="rsvp-transport__heading">
+          <h4 id={`${panelId}-transport-title`}>¿Van a necesitar transporte?</h4>
+          <Link id={`transporte-${event.slug}`} href={`?transporte=${event.slug}`} prefetch={false}
+            aria-label={`Información de transporte para ${event.title}`}
+            onNavigate={(navigation) => {
+              navigation.preventDefault();
+              const url = new URL(window.location.href);
+              url.searchParams.set("transporte", event.slug);
+              url.hash = "";
+              window.history.pushState({ fromInvitationRsvp: true }, "", url);
+            }}>Info</Link>
+        </div>
+        {incomplete && !pending && transportPending && <p className="field-error rsvp-day__error" role="alert">Indica si cada persona que asiste necesita transporte.</p>}
+        {people.map((person, index) => {
+          if (person.attendance !== "yes") return null;
+          const id = `${panelId}-transport-${index}`;
+          return <div className="rsvp-person" role="group" aria-labelledby={`${id}-name`} key={id}>
+            <span id={`${id}-name`}>{names[index]}</span>
+            <AttendanceOptions fieldId={id} value={person.transport ?? ""} onChange={(transport) => updatePerson(index, { transport })}
+              labels={transportLabels} choices={["yes", "no"]} />
+          </div>;
+        })}
+      </div>
       <details className="rsvp-comments">
         <summary>{hasComments ? "Editar comentarios" : "Agregar comentarios (opcional)"}</summary>
         <div className="rsvp-comments__fields">
@@ -162,7 +190,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
     setErrors({});
     setStatus(null);
     setIncompleteDay(undefined);
-    const unansweredDay = isFinal && days.find(({ field }) => attendanceByDay[field]?.some((person) => !person.attendance));
+    const unansweredDay = isFinal && days.find(({ field }) => attendanceByDay[field]?.some((person) => !person.attendance || needsTransportAnswer(person)));
     if (unansweredDay) {
       setOpenDay(unansweredDay.field);
       setIncompleteDay(unansweredDay.field);
@@ -211,7 +239,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
           {days.map(({ event, field }) => {
             const people = confirmation.party?.attendanceByDay?.[field];
             return <div key={event.id}><dt>{event.title}</dt><dd>{people
-              ? <ul>{people.map((person, index) => <li key={index}>{confirmedNames[index]} · {personAttendanceLabels[person.attendance]}{person.comment && <p>{person.comment}</p>}</li>)}</ul>
+              ? <ul>{people.map((person, index) => <li key={index}>{confirmedNames[index]} · {personAttendanceLabels[person.attendance]}{person.transport && <> · Transporte {transportLabels[person.transport]}</>}{person.comment && <p>{person.comment}</p>}</li>)}</ul>
               : attendanceLabels[confirmation[field]]}</dd></div>;
           })}
           {confirmation.comment && <div><dt>Comentario</dt><dd>{confirmation.comment}</dd></div>}

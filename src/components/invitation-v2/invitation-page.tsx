@@ -7,6 +7,7 @@ import { RsvpSection } from "@/src/components/public/rsvp-section";
 import { getEvents, getSettings } from "@/src/db/queries";
 import type { InvitationPhase } from "@/src/db/schema";
 import { formatDayMonth, formatLongDate } from "@/src/lib/dates";
+import { rsvpDays } from "@/src/lib/invitation-party";
 import { createInvitationContent } from "./invitation-content";
 import { InvitationExperience } from "./invitation-experience";
 
@@ -28,7 +29,9 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
   });
 
   return (
-    <InvitationExperience content={content}>
+    <InvitationExperience content={content} transportDays={phase === "final"
+      ? rsvpDays.filter(({ slug }) => visibleEvents.some((event) => event.slug === slug))
+      : undefined}>
       <ItinerarySection events={invitationEvents} />
       {!saturdayOnly && <HospitalitySection settings={settings} />}
       {phase === "final" && settings.finalInvitationDetails && (

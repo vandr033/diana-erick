@@ -24,8 +24,8 @@ const SWIPE_DISTANCE = 55;
 const SWIPE_VELOCITY = 0.45;
 const MAX_DRAG_PREVIEW = 70;
 
-export function useEnvelopeInteraction() {
-  const [state, setState] = useState<InvitationState>("closed");
+export function useEnvelopeInteraction(initiallyOpened = false) {
+  const [state, setState] = useState<InvitationState>(initiallyOpened ? "opened" : "closed");
   const [dragProgress, setDragProgress] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const pointerRef = useRef<ActivePointer | null>(null);

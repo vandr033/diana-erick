@@ -16,7 +16,9 @@ export const saturdayAttendanceSchema = z.array(z.enum(["yes", "no"])).max(maxCo
 const personRsvpsSchema = z.array(z.object({
   attendance: z.enum(["yes", "no"]),
   comment: z.string().trim().max(1000).optional(),
-})).max(maxCompanions + 1);
+  transport: z.enum(["yes", "no"]).optional(),
+}).refine(({ attendance, transport }) => attendance === "yes" || transport === undefined,
+  "Solo las personas que asisten pueden solicitar transporte.")).max(maxCompanions + 1);
 export const attendanceByDaySchema = z.strictObject({
   attendsFriday: personRsvpsSchema.optional(),
   attendsSaturday: personRsvpsSchema.optional(),
