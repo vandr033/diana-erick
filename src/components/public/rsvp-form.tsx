@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Attendance, AttendanceDay, Event, InvitationPhase, PersonRsvp, SiteSettings } from "@/src/db/schema";
 import { companionLabel, rsvpDays, transportLabels } from "@/src/lib/invitation-party";
 import type { RsvpConfirmation } from "@/src/lib/rsvp-server";
-import { guestGuidePages } from "@/src/lib/wedding-guide";
+import { guestGuidePages, type GuidePage } from "@/src/lib/wedding-guide";
+import { DeadlineSection } from "./deadline-section";
 import { RsvpFeedback } from "./rsvp-feedback";
 
-type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel" | "rsvpTitle" | "rsvpClosedMessage">;
+type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLabel" | "confirmationMessage" | "confirmationTitle" | "fullNameLabel" | "submitButtonLabel" | "rsvpTitle" | "rsvpClosedMessage" | "rsvpDeadlineDate" | "deadlineSubtitle">;
+
+const guideIcons: Record<GuidePage, string> = {
+  vestimenta: "M12 7V6a2 2 0 1 0-2-2m2 3L3 13a2 2 0 0 0 1 4h16a2 2 0 0 0 1-4l-9-6Z",
+  actividades: "M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z M15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+  regalos: "M3 8h18v4H3z M5 12v9h14v-9 M12 21V8 M12 8H8a2.5 2.5 0 1 1 2.4-3.2L12 8Zm0 0h4a2.5 2.5 0 1 0-2.4-3.2L12 8Z",
+  faq: "M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l1.5-4A8.5 8.5 0 1 1 21 11.5Z M10 9a2.5 2.5 0 1 1 4 2l-1.5 1v1 M12.5 16h.01",
+};
 
 type FormValues = {
   fullName: string;
@@ -171,7 +179,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   </div>;
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [], savedConfirmation, canEdit = true, afterRsvp }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean; afterRsvp?: ReactNode }) {
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [], savedConfirmation, canEdit = true, countdownEvent }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean; countdownEvent?: Event }) {
   const isFinal = phase === "final";
   const days = rsvpDays.flatMap(({ slug, field }) => {
     const event = events.find((item) => item.slug === slug);
@@ -350,21 +358,25 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         {confirmationContent ?? (canEdit ? formContent : <div className="rsvp-closed" role="status">{settings.rsvpClosedMessage}</div>)}
       </div>
     </section>
-    {afterRsvp}
-    {isFinal && <section id="guia" className="rsvp-section guest-guide" aria-labelledby="guia-titulo">
-      <div className="rsvp-shell">
-        <h2 id="guia-titulo" ref={guideRef} tabIndex={-1}>Guía de la boda</h2>
+    {countdownEvent && <DeadlineSection settings={settings} targetEvent={countdownEvent} headingRef={isFinal ? guideRef : undefined}
+      actions={isFinal && <div className="guest-guide">
         <nav className="guest-guide__links" aria-label="Información para invitados">
-          {Object.entries(guestGuidePages).map(([slug, { label }]) => <Link className="button button--outline" href={`${invitationPath}/${slug}`} key={slug}>{label}</Link>)}
+          {(Object.keys(guestGuidePages) as GuidePage[]).map((slug) => (
+            <Link className="button guest-guide__button" href={`${invitationPath}/${slug}`} key={slug}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d={guideIcons[slug]} />
+              </svg>
+              {guestGuidePages[slug].label}
+            </Link>
+          ))}
         </nav>
-        <section className="guest-guide__group">
-          <h3>Resumen</h3>
-          {confirmation && <p role="status">Tu confirmación está guardada.</p>}
-          <a className="text-link" href="#confirmar">{confirmation ? "Ver confirmación" : "Confirmar asistencia"}</a>
-        </section>
-        {confirmation?.feedbackReceipt && <RsvpFeedback receipt={confirmation.feedbackReceipt}
-          food={confirmation.foodFeedback} music={confirmation.musicFeedback} flight={confirmation.flightFeedback} />}
-      </div>
-    </section>}
+        {confirmation?.feedbackReceipt && <div className="guest-guide__feedback">
+          <RsvpFeedback receipt={confirmation.feedbackReceipt} food={confirmation.foodFeedback}
+            music={confirmation.musicFeedback} flight={confirmation.flightFeedback} />
+        </div>}
+        <a className="button guest-guide__button guest-guide__button--rsvp" href="#confirmar">
+          {confirmation ? "Ver confirmación" : "Confirmar asistencia"}
+        </a>
+      </div>} />}
   </>;
 }

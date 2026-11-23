@@ -208,21 +208,36 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .confirmation__summary dd { margin: 0; font-size: 13px; white-space: pre-line; overflow-wrap: anywhere; min-width: 0; }
 .confirmation__summary ul { display: grid; gap: 8px; }
 .rsvp-edit-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
-.guest-guide { min-height: 0; }
-.guest-guide .rsvp-shell { display: grid; gap: var(--space-md); }
-.guest-guide h2 { margin-bottom: var(--space-sm); scroll-margin-top: var(--space-lg); }
-.guest-guide__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); padding-bottom: var(--space-sm); }
-.guest-guide__links .button { padding-inline: var(--space-xs); text-align: center; }
-.guest-guide__group { display: grid; justify-items: start; gap: var(--space-sm); border-top: 1px solid var(--color-border); padding-top: var(--space-md); }
-.guest-guide__group h3 { color: var(--color-olive-dark); font-size: 29px; line-height: 1; }
-.guest-guide__group > .button { letter-spacing: .06em; text-align: center; }
+.guest-guide { width: min(100%, 420px); justify-self: center; display: grid; gap: var(--space-md); }
+.guest-guide__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+.guest-guide__button {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-sm);
+  gap: var(--space-sm);
+  border-color: color-mix(in srgb, var(--color-cream) 60%, transparent);
+  background: color-mix(in srgb, var(--color-olive) 45%, var(--color-ink));
+  color: var(--color-cream-light);
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+.guest-guide__button svg { width: 18px; height: 18px; flex: none; }
+.guest-guide__button:hover { background: var(--color-ink); }
+.guest-guide__button:focus-visible, .deadline-copy--guide > h2:focus-visible { outline-color: var(--color-cream-light); }
+.guest-guide__button--rsvp { background: var(--color-cream-light); color: var(--color-ink); }
+.guest-guide__button--rsvp:hover { background: var(--color-cream); }
+.guest-guide__feedback { display: grid; gap: var(--space-xs); }
+.guest-guide__feedback .guest-guide__button { justify-content: space-between; padding-inline: var(--space-md); text-align: left; }
+.guest-guide__feedback .guest-guide__button::after { content: ""; flex: none; width: 6px; height: 6px; border: solid currentColor; border-width: 1px 1px 0 0; transform: rotate(45deg); }
 .wedding-guide-page h1 { margin: 12px 0 24px; color: var(--color-olive-dark); font-size: clamp(46px, 11vw, 72px); line-height: .9; }
 .wedding-guide-page__description { margin-top: var(--space-lg); }
 .wedding-faq details { border-bottom: 1px solid var(--color-border); }
 .wedding-faq summary { cursor: pointer; padding-block: var(--space-md); font-weight: 600; color: var(--color-olive-dark); }
 .wedding-faq p { padding-bottom: var(--space-md); white-space: pre-wrap; overflow-wrap: anywhere; }
-.rsvp-feedback__status { color: var(--color-olive-dark); font-size: 12px; }
-.rsvp-feedback__status:not(:empty) { margin-top: var(--space-xs); }
+.rsvp-feedback__status { color: var(--color-ink); font-size: 12px; text-align: left; }
+.rsvp-feedback__status:not(:empty) { margin-top: var(--space-xs); padding: var(--space-xs) var(--space-sm); background: var(--color-cream-light); }
+.rsvp-feedback__dialog { text-align: left; }
 .rsvp-feedback__dialog .event-dialog__inner { padding: var(--space-2xl) var(--space-lg) var(--space-lg); gap: var(--space-lg); }
 .rsvp-feedback__dialog .dialog-close { min-height: 44px; top: 0; }
 .rsvp-feedback__dialog h2 { margin: 0; font-size: clamp(38px, 8vw, 52px); line-height: .95; }
@@ -246,8 +261,9 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .deadline-section__rsvp-pane { min-width: 0; background: var(--color-olive); color: var(--color-cream); display: grid; place-items: center; padding: clamp(72px, 9vw, 136px) clamp(28px, 5vw, 80px); }
 .deadline-copy { width: min(100%, 620px); display: grid; gap: clamp(18px, 2vw, 24px); text-align: center; }
 .deadline-rule { width: 100%; border-top-color: rgba(245, 237, 220, .72); }
-.deadline-copy h2 { font-size: clamp(48px, 5.4vw, 82px); line-height: .8; letter-spacing: -.04em; }
-.deadline-copy h2 span { display: block; }
+.deadline-copy > h2 { font-size: clamp(48px, 5.4vw, 82px); line-height: .8; letter-spacing: -.04em; }
+.deadline-copy > h2 span { display: block; }
+.deadline-copy--guide > h2 { font-size: clamp(42px, 5vw, 76px); line-height: .92; text-wrap: balance; scroll-margin-top: var(--space-lg); }
 .deadline-copy > p { font-size: clamp(9px, .8vw, 11px); letter-spacing: .22em; }
 .deadline-copy > p strong { font-weight: 800; }
 .public-footer { background: var(--color-cream-light); color: var(--color-olive-dark); }
@@ -296,7 +312,8 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
   .deadline-section__countdown h2 { font-size: clamp(46px, 12vw, 62px); }
   .deadline-section__rsvp-pane { min-height: 72svh; padding: 80px 22px; }
   .deadline-copy { width: min(100%, 390px); }
-  .deadline-copy h2 { font-size: clamp(48px, 14vw, 68px); }
+  .deadline-copy > h2 { font-size: clamp(48px, 14vw, 68px); }
+  .deadline-copy--guide > h2 { font-size: clamp(42px, 11vw, 56px); }
   .countdown { width: 100%; }
   .countdown__values span { font-size: clamp(1rem, 6vw, 1.55rem); }
   .public-footer__meta { flex-direction: column; align-items: flex-start; }

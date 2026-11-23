@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { ReactNode, Ref } from "react";
 import type { Event, SiteSettings } from "@/src/db/schema";
 import { formatDeadlineHeading } from "@/src/lib/dates";
 import { LiveCountdown } from "./live-countdown";
@@ -8,9 +9,12 @@ function targetIso(event: Event) {
   return `${event.date}T${time?.length === 5 ? `${time}:00` : time}-04:00`;
 }
 
-export function DeadlineSection({ settings, targetEvent }: { settings: SiteSettings; targetEvent: Event }) {
-  const heading = formatDeadlineHeading(settings.rsvpDeadlineDate);
-
+export function DeadlineSection({ settings, targetEvent, actions, headingRef }: {
+  settings: Pick<SiteSettings, "rsvpDeadlineDate" | "deadlineSubtitle">;
+  targetEvent: Event;
+  actions?: ReactNode;
+  headingRef?: Ref<HTMLHeadingElement>;
+}) {
   return (
     <section id="fecha-limite" className="deadline-section" aria-labelledby="deadline-title">
       <div id="cuenta-regresiva" className="deadline-section__countdown-pane">
@@ -33,12 +37,14 @@ export function DeadlineSection({ settings, targetEvent }: { settings: SiteSetti
           />
         </div>
       </div>
-      <div className="deadline-section__rsvp-pane">
-        <div className="deadline-copy">
+      <div id={actions ? "guia" : undefined} className="deadline-section__rsvp-pane">
+        <div className={actions ? "deadline-copy deadline-copy--guide" : "deadline-copy"}>
           <div className="deadline-rule" />
-          <h2 id="deadline-title">{heading.map((line) => <span key={line}>{line}</span>)}</h2>
+          <h2 id="deadline-title" ref={headingRef} tabIndex={actions ? -1 : undefined}>
+            {actions ? "Muchas gracias por confirmar!" : formatDeadlineHeading(settings.rsvpDeadlineDate).map((line) => <span key={line}>{line}</span>)}
+          </h2>
           <div className="deadline-rule" />
-          <p><strong>{settings.deadlineSubtitle}</strong></p>
+          {actions || <p><strong>{settings.deadlineSubtitle}</strong></p>}
         </div>
       </div>
     </section>

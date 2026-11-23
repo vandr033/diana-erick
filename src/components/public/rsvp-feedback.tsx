@@ -5,9 +5,8 @@ import { describeFoodFeedback, type FlightFeedback, type FoodFeedback, type Musi
 
 type Feedback = ({ kind: "food" } & Extract<FoodFeedback, { hasRestrictions: string }>) | ({ kind: "music" } & MusicFeedback) | ({ kind: "flight" } & FlightFeedback);
 
-function FeedbackDialog({ receipt, section, label, title, submitLabel, success, submitted, feedback, children }: {
+function FeedbackDialog({ receipt, label, title, submitLabel, success, submitted, feedback, children }: {
   receipt: string;
-  section: string;
   label: string;
   title: string;
   submitLabel: string;
@@ -48,9 +47,8 @@ function FeedbackDialog({ receipt, section, label, title, submitLabel, success, 
     }
   }
 
-  return <section className="guest-guide__group">
-    <h3>{section}</h3>
-    <button type="button" className="button button--outline" onClick={() => {
+  return <div>
+    <button type="button" className="button guest-guide__button" onClick={() => {
       setError("");
       dialogRef.current?.showModal();
     }}>{label}</button>
@@ -66,14 +64,14 @@ function FeedbackDialog({ receipt, section, label, title, submitLabel, success, 
         </form>
       </div>
     </dialog>
-  </section>;
+  </div>;
 }
 
 export function RsvpFeedback({ receipt, food, music, flight }: { receipt: string; food?: FoodFeedback | null; music?: MusicFeedback | null; flight?: FlightFeedback | null }) {
   const previousFood = food ? describeFoodFeedback(food) : null;
   const [foodAnswer, setFoodAnswer] = useState(previousFood?.answer === "Sí" ? "yes" : previousFood ? "no" : "");
   return <>
-    <FeedbackDialog receipt={receipt} section="Comida" label="¿Alguna restricción alimentaria?" title="Restricciones alimentarias"
+    <FeedbackDialog receipt={receipt} label="¿Alguna restricción alimentaria?" title="Restricciones alimentarias"
       submitted={Boolean(food)}
       submitLabel="Enviar restricciones" success="Restricciones guardadas."
       feedback={(data) => ({
@@ -93,7 +91,7 @@ export function RsvpFeedback({ receipt, food, music, flight }: { receipt: string
           placeholder="Ej. Ana tiene alergia al maní." />
       </label>
     </FeedbackDialog>
-    <FeedbackDialog receipt={receipt} section="Música" label="¿Sugerencias de canciones?" title="Sugerencias de canciones"
+    <FeedbackDialog receipt={receipt} label="¿Sugerencias de canciones?" title="Sugerencias de canciones"
       submitted={Boolean(music)}
       submitLabel="Enviar sugerencia" success="Sugerencia guardada."
       feedback={(data) => ({
@@ -105,7 +103,7 @@ export function RsvpFeedback({ receipt, food, music, flight }: { receipt: string
         <textarea name="song" rows={2} maxLength={500} defaultValue={music?.song} placeholder="Ej. September · Earth, Wind & Fire" required />
       </label>
     </FeedbackDialog>
-    <FeedbackDialog receipt={receipt} section="Vuelos" label="¿Llegas en avión?" title="Vuelos a Santa Cruz"
+    <FeedbackDialog receipt={receipt} label="¿Llegas en avión?" title="Vuelos a Santa Cruz"
       submitted={Boolean(flight)}
       submitLabel="Enviar datos de vuelo" success="Datos de vuelo guardados."
       feedback={(data) => ({

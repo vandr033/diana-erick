@@ -1,4 +1,3 @@
-import { DeadlineSection } from "@/src/components/public/deadline-section";
 import { withInvitationEventArtwork } from "@/src/components/public/invitation-event-artwork";
 import { HospitalitySection } from "@/src/components/public/hospitality-section";
 import { ItinerarySection } from "@/src/components/public/itinerary-section";
@@ -46,7 +45,7 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
       )}
       <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken}
         phase={phase} companions={companions} savedConfirmation={savedConfirmation}
-        afterRsvp={<DeadlineSection settings={settings} targetEvent={targetEvent} />} />
+        countdownEvent={targetEvent} />
       <PublicFooter settings={settings} />
     </InvitationExperience>
   );
