@@ -39,7 +39,7 @@ export function DeadlineSection({ settings, targetEvent, actions, headingRef }: 
       </div>
       <div id={actions ? "guia" : undefined} className="deadline-section__rsvp-pane">
         <div className={actions ? "deadline-copy deadline-copy--guide" : "deadline-copy"}>
-          <div className="deadline-rule" />
+          {!actions && <div className="deadline-rule" />}
           <h2 id="deadline-title" ref={headingRef} tabIndex={actions ? -1 : undefined}>
             {actions ? "Muchas gracias por confirmar!" : formatDeadlineHeading(settings.rsvpDeadlineDate).map((line) => <span key={line}>{line}</span>)}
           </h2>

@@ -208,35 +208,56 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .confirmation__summary dd { margin: 0; font-size: 13px; white-space: pre-line; overflow-wrap: anywhere; min-width: 0; }
 .confirmation__summary ul { display: grid; gap: 8px; }
 .rsvp-edit-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
-.guest-guide { width: min(100%, 420px); justify-self: center; display: grid; gap: var(--space-md); }
+.guest-guide { width: min(100%, 380px); justify-self: center; display: grid; gap: var(--space-lg); }
 .guest-guide__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
 .guest-guide__button {
   width: 100%;
   min-height: 44px;
   padding: var(--space-sm);
   gap: var(--space-sm);
-  border-color: color-mix(in srgb, var(--color-cream) 60%, transparent);
-  background: color-mix(in srgb, var(--color-olive) 45%, var(--color-ink));
   color: var(--color-cream-light);
-  font-size: 11px;
-  letter-spacing: .04em;
+  letter-spacing: .01em;
   text-transform: none;
 }
-.guest-guide__button svg { width: 18px; height: 18px; flex: none; }
-.guest-guide__button:hover { background: var(--color-ink); }
+.guest-guide__links .guest-guide__button, .guest-guide__button--rsvp {
+  border: 3px double color-mix(in srgb, var(--color-cream-light) 78%, transparent);
+  border-radius: 999px;
+  min-height: 48px;
+  font-family: var(--font-display), serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.guest-guide__button svg { width: 16px; height: 16px; flex: none; }
+.guest-guide__button:hover { background: color-mix(in srgb, var(--color-ink) 28%, transparent); transform: none; }
 .guest-guide__button:focus-visible, .deadline-copy--guide > h2:focus-visible { outline-color: var(--color-cream-light); }
-.guest-guide__button--rsvp { background: var(--color-cream-light); color: var(--color-ink); }
+.guest-guide__button--rsvp {
+  width: fit-content;
+  justify-self: center;
+  padding-inline: var(--space-lg);
+  border-color: var(--guide-olive);
+  background: var(--color-cream-light);
+  color: var(--color-ink);
+}
 .guest-guide__button--rsvp:hover { background: var(--color-cream); }
-.guest-guide__feedback { display: grid; gap: var(--space-xs); }
-.guest-guide__feedback .guest-guide__button { justify-content: space-between; padding-inline: var(--space-md); text-align: left; }
+.guest-guide__feedback { border-top: 1px solid var(--guide-rule); }
+.guest-guide__feedback > div { border-bottom: 1px solid var(--guide-rule); }
+.guest-guide__feedback .guest-guide__button {
+  justify-content: space-between;
+  padding-inline: var(--space-sm);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
 .guest-guide__feedback .guest-guide__button::after { content: ""; flex: none; width: 6px; height: 6px; border: solid currentColor; border-width: 1px 1px 0 0; transform: rotate(45deg); }
 .wedding-guide-page h1 { margin: 12px 0 24px; color: var(--color-olive-dark); font-size: clamp(46px, 11vw, 72px); line-height: .9; }
 .wedding-guide-page__description { margin-top: var(--space-lg); }
 .wedding-faq details { border-bottom: 1px solid var(--color-border); }
 .wedding-faq summary { cursor: pointer; padding-block: var(--space-md); font-weight: 600; color: var(--color-olive-dark); }
 .wedding-faq p { padding-bottom: var(--space-md); white-space: pre-wrap; overflow-wrap: anywhere; }
-.rsvp-feedback__status { color: var(--color-ink); font-size: 12px; text-align: left; }
-.rsvp-feedback__status:not(:empty) { margin-top: var(--space-xs); padding: var(--space-xs) var(--space-sm); background: var(--color-cream-light); }
+.rsvp-feedback__status { color: var(--color-cream-light); font-size: 12px; text-align: left; }
+.rsvp-feedback__status:not(:empty) { display: flex; align-items: baseline; gap: var(--space-sm); padding: 0 var(--space-sm) var(--space-sm); }
+.rsvp-feedback__status:not(:empty)::before { content: ""; flex: none; width: 9px; height: 5px; border: solid currentColor; border-width: 0 0 1px 1px; transform: translateY(-2px) rotate(-45deg); }
 .rsvp-feedback__dialog { text-align: left; }
 .rsvp-feedback__dialog .event-dialog__inner { padding: var(--space-2xl) var(--space-lg) var(--space-lg); gap: var(--space-lg); }
 .rsvp-feedback__dialog .dialog-close { min-height: 44px; top: 0; }
@@ -259,11 +280,52 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .deadline-section__countdown { width: 100%; min-width: 0; display: grid; justify-items: center; gap: 10px; text-align: center; }
 .deadline-section__countdown h2 { color: var(--color-olive-dark); font-size: clamp(42px, 4.5vw, 68px); line-height: .82; }
 .deadline-section__rsvp-pane { min-width: 0; background: var(--color-olive); color: var(--color-cream); display: grid; place-items: center; padding: clamp(72px, 9vw, 136px) clamp(28px, 5vw, 80px); }
+.deadline-section__rsvp-pane:has(.deadline-copy--guide) {
+  --guide-olive: color-mix(in srgb, var(--color-olive) 65%, var(--color-ink));
+  --guide-rule: color-mix(in srgb, var(--color-cream-light) 48%, transparent);
+  background: var(--guide-olive);
+}
 .deadline-copy { width: min(100%, 620px); display: grid; gap: clamp(18px, 2vw, 24px); text-align: center; }
 .deadline-rule { width: 100%; border-top-color: rgba(245, 237, 220, .72); }
 .deadline-copy > h2 { font-size: clamp(48px, 5.4vw, 82px); line-height: .8; letter-spacing: -.04em; }
 .deadline-copy > h2 span { display: block; }
-.deadline-copy--guide > h2 { font-size: clamp(42px, 5vw, 76px); line-height: .92; text-wrap: balance; scroll-margin-top: var(--space-lg); }
+.deadline-copy--guide { max-width: 480px; }
+.deadline-copy--guide > h2 {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: clamp(39px, 4.5vw, 65px);
+  line-height: .94;
+  text-wrap: balance;
+  scroll-margin-top: var(--space-lg);
+}
+.deadline-copy--guide > h2::before, .deadline-copy--guide > h2::after {
+  content: "";
+  width: clamp(20px, 3.2vw, 38px);
+  aspect-ratio: 156 / 430;
+  background: var(--color-cream);
+  /* Use the left calla lily from the countdown artwork as a stencil. */
+  mask: url('/images/countdown-timer.png') left 45% / auto 219% no-repeat;
+}
+.deadline-copy--guide > h2::after { transform: scaleX(-1); }
+.deadline-copy--guide > .deadline-rule {
+  position: relative;
+  width: 80px;
+  justify-self: center;
+  border-top-color: var(--guide-rule);
+}
+.deadline-copy--guide > .deadline-rule::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: var(--color-cream);
+  box-shadow: 0 0 0 3px var(--guide-olive);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
 .deadline-copy > p { font-size: clamp(9px, .8vw, 11px); letter-spacing: .22em; }
 .deadline-copy > p strong { font-weight: 800; }
 .public-footer { background: var(--color-cream-light); color: var(--color-olive-dark); }
@@ -313,7 +375,7 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
   .deadline-section__rsvp-pane { min-height: 72svh; padding: 80px 22px; }
   .deadline-copy { width: min(100%, 390px); }
   .deadline-copy > h2 { font-size: clamp(48px, 14vw, 68px); }
-  .deadline-copy--guide > h2 { font-size: clamp(42px, 11vw, 56px); }
+  .deadline-copy--guide > h2 { font-size: clamp(34px, 10.7vw, 56px); }
   .countdown { width: 100%; }
   .countdown__values span { font-size: clamp(1rem, 6vw, 1.55rem); }
   .public-footer__meta { flex-direction: column; align-items: flex-start; }
