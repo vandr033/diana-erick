@@ -1,6 +1,7 @@
 export const guestGuidePages = {
   vestimenta: { label: "Dress inspo", title: "Inspiración de vestimenta", description: "Aquí compartiremos ideas para el look de cada celebración." },
   actividades: { label: "Things to do", title: "Qué hacer en Santa Cruz", description: "Pronto compartiremos nuestras recomendaciones para disfrutar la ciudad." },
+  restaurantes: { label: "Restaurantes", title: "Dónde comer en Santa Cruz", description: "Una pequeña guía para descubrir los sabores de la ciudad entre celebraciones." },
   regalos: { label: "Registry", title: "Lista de regalos", description: "Aquí encontrarás nuestra lista de regalos cuando esté lista." },
   faq: { label: "FAQ", title: "Preguntas frecuentes", description: "" },
 };

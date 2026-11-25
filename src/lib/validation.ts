@@ -45,6 +45,7 @@ export const manualInvitationGuestSchema = z.object({
   prefix: z.string().trim().max(8, "El prefijo no es válido.").optional().default(""),
   phoneNumber: z.string().trim().max(24, "El número no es válido.").optional().default(""),
   saturdayOnly: z.coerce.boolean().default(false),
+  transportIncluded: z.coerce.boolean().default(true),
   sourceResponseId: z.string().uuid().optional(),
   companions: companionNames.optional(),
 }).superRefine((value, context) => {
@@ -61,6 +62,7 @@ export const invitationGuestUpdateSchema = z.object({
   name: requiredText("Ingresa el nombre de la persona.", 150),
   phoneNumber: z.string().trim().max(24, "El número no es válido.").nullable().optional(),
   saturdayOnly: z.coerce.boolean().default(false),
+  transportIncluded: z.coerce.boolean().default(true),
   customMessage: z.string().trim().max(2000, "El mensaje no puede superar los 2.000 caracteres.").nullable().optional(),
   companions: companionNames.optional(),
 }).superRefine((value, context) => {

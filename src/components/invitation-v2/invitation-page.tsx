@@ -11,7 +11,7 @@ import type { RsvpConfirmation } from "@/src/lib/rsvp-server";
 import { createInvitationContent } from "./invitation-content";
 import { InvitationExperience } from "./invitation-experience";
 
-export async function InvitationV2Page({ saturdayOnly = false, initialName, invitationToken, phase = "save-the-date", companions, savedConfirmation }: { saturdayOnly?: boolean; initialName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation }) {
+export async function InvitationV2Page({ saturdayOnly = false, transportIncluded = true, initialName, invitationToken, phase = "save-the-date", companions, savedConfirmation }: { saturdayOnly?: boolean; transportIncluded?: boolean; initialName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation }) {
   const [settings, allEvents] = await Promise.all([getSettings(), getEvents(true)]);
   const saturdayEvent = allEvents.find((event) => event.slug === "sabado");
   const visibleEvents = saturdayOnly ? allEvents.filter((event) => event.slug === "sabado") : allEvents;
@@ -30,10 +30,10 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
 
   return (
     <InvitationExperience content={content} transportDays={phase === "final"
-      ? rsvpDays.filter(({ slug }) => visibleEvents.some((event) => event.slug === slug))
+      ? transportIncluded ? rsvpDays.filter(({ slug }) => visibleEvents.some((event) => event.slug === slug)) : []
       : undefined}>
       <ItinerarySection events={invitationEvents} />
-      {!saturdayOnly && <HospitalitySection settings={settings} events={phase === "final" ? visibleEvents : undefined} />}
+      {!saturdayOnly && <HospitalitySection settings={settings} events={phase === "final" ? visibleEvents : undefined} showTransport={phase !== "final" || transportIncluded} />}
       {phase === "final" && settings.finalInvitationDetails && (
         <section className="rsvp-section rsvp-section--details" aria-labelledby="final-invitation-details">
           <div className="rsvp-shell">
@@ -43,7 +43,7 @@ export async function InvitationV2Page({ saturdayOnly = false, initialName, invi
           </div>
         </section>
       )}
-      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} initialName={initialName} invitationToken={invitationToken}
+      <RsvpSection settings={settings} events={visibleEvents} saturdayOnly={saturdayOnly} transportIncluded={phase !== "final" || transportIncluded} initialName={initialName} invitationToken={invitationToken}
         phase={phase} companions={companions} savedConfirmation={savedConfirmation}
         countdownEvent={targetEvent} />
       <PublicFooter settings={settings} />

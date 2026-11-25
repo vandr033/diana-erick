@@ -17,6 +17,7 @@ export const weddingImportSchema = z.object({
     companions: companionNames,
     phoneNumber: z.union([z.literal(""), z.string().regex(/^\+\d{8,15}$/, "Usa un teléfono internacional, por ejemplo +59170000000.")]).transform((value) => value || null),
     saturdayOnly: z.boolean({ error: "Selecciona los eventos de cada invitación." }),
+    transportIncluded: z.boolean({ error: "Selecciona si la invitación incluye transporte." }),
   })).min(1, "Selecciona al menos una invitación."),
 });
 

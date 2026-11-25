@@ -42,6 +42,7 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
       return NextResponse.json({ message: "No encontramos esta invitación." }, { status: 404 });
     }
     const saturdayOnly = phase === "final" && invitationGuest ? invitationGuest.saturdayOnly : scope === "saturday";
+    const transportIncluded = phase !== "final" || (invitationGuest ? invitationGuest.transportIncluded : body.transportIncluded !== false);
     let party: PartyResponse | null = null;
     if (phase === "final") {
       const [settings, events] = await Promise.all([getSettings(), getEvents(true)]);
@@ -66,7 +67,10 @@ export async function handleRsvpSubmission(request: Request, scope: "all" | "sat
           }
           body[field] = people?.some((person) => person.attendance === "yes") ? "yes" : "no";
         }
-        party = { companions, attendanceByDay: answers.data };
+        const attendanceByDay = transportIncluded ? answers.data : Object.fromEntries(
+          rsvpDays.map(({ field }) => [field, answers.data[field]?.map((person) => ({ ...person, transport: undefined }))]),
+        ) as typeof answers.data;
+        party = { companions, attendanceByDay };
       } else if (companions.length) {
         party = { companions };
       }

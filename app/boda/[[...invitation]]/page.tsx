@@ -19,12 +19,12 @@ export default async function WeddingInvitationPage({ params }: { params: Promis
   if (invitation.length > 2) notFound();
   const [segment, guide] = invitation;
   if (!guide && isGuidePage(segment)) return <WeddingGuidePage page={segment} invitationPath="/boda" />;
-  if (!segment || segment === "sabado") {
+  if (!segment || segment === "sabado" || segment === "sin-bus") {
     if (guide) {
       if (!isGuidePage(guide)) notFound();
-      return <WeddingGuidePage page={guide} invitationPath="/boda/sabado" />;
+      return <WeddingGuidePage page={guide} invitationPath={segment === "sabado" ? "/boda/sabado" : segment === "sin-bus" ? "/boda/sin-bus" : "/boda"} />;
     }
-    return <InvitationV2Page phase="final" saturdayOnly={segment === "sabado"} />;
+    return <InvitationV2Page phase="final" saturdayOnly={segment === "sabado"} transportIncluded={segment !== "sin-bus" && segment !== "sabado"} />;
   }
 
   const guest = await getInvitationGuest(segment, "final");
@@ -36,7 +36,7 @@ export default async function WeddingInvitationPage({ params }: { params: Promis
   const existing = await getLatestWeddingResponse(guest.id);
   return <>
     <InvitationOpenTracker token={guest.token} />
-    <InvitationV2Page phase="final" saturdayOnly={guest.saturdayOnly} initialName={guest.name} invitationToken={guest.token}
+    <InvitationV2Page phase="final" saturdayOnly={guest.saturdayOnly} transportIncluded={guest.transportIncluded} initialName={guest.name} invitationToken={guest.token}
       companions={guest.companions} savedConfirmation={existing ? toRsvpConfirmation(existing) : undefined} />
   </>;
 }

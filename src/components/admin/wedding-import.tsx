@@ -7,7 +7,7 @@ import type { WeddingImportPreview } from "@/src/lib/wedding-import";
 type PreviewRow = WeddingImportPreview["rows"][number];
 type DraftRow = Omit<PreviewRow, "phoneNumber" | "saturdayOnly" | "companions"> & {
   phoneNumber: string;
-  scope: "" | "saturday" | "weekend";
+  scope: "" | "saturday" | "weekend-no-bus" | "weekend-bus";
   companionsText: string;
   selected: boolean;
 };
@@ -38,7 +38,7 @@ export function WeddingImport() {
       setRows(preview.rows.map((row) => ({
         ...row,
         phoneNumber: row.phoneNumber ?? "",
-        scope: row.saturdayOnly === null ? "" : row.saturdayOnly ? "saturday" : "weekend",
+        scope: row.saturdayOnly === null ? "" : row.saturdayOnly ? "saturday" : "weekend-bus",
         companionsText: row.companions.join("\n"),
         selected: !row.alreadyInvited,
       })));
@@ -65,6 +65,7 @@ export function WeddingImport() {
           phoneNumber: row.phoneNumber.trim(),
           companions: row.companionsText.split("\n").map((line) => line.trim()).filter(Boolean),
           saturdayOnly: row.scope === "saturday",
+          transportIncluded: row.scope === "weekend-bus",
         })) }),
       });
       const result = await response.json() as { count?: number; message?: string };
@@ -104,17 +105,17 @@ export function WeddingImport() {
         </button>
       </div>
       {pending > 0 && <div className="wedding-import__pending">
-        <p className="admin-note">Hay {pending} invitaciones seleccionadas sin eventos asignados. Elige los eventos por fila o asigna el mismo alcance a las pendientes.</p>
+        <p className="admin-note">Hay {pending} invitaciones seleccionadas sin tipo asignado. Elige una opción por fila o aplícala a las pendientes.</p>
         <div className="admin-actions">
-          {(["saturday", "weekend"] as const).map((scope) => <button type="button" key={scope} disabled={busy} className="admin-button admin-button--secondary"
+          {(["saturday", "weekend-no-bus", "weekend-bus"] as const).map((scope) => <button type="button" key={scope} disabled={busy} className="admin-button admin-button--secondary"
             onClick={() => setRows((current) => current.map((row) => row.selected && !row.scope ? { ...row, scope } : row))}>
-            {scope === "saturday" ? "Pendientes: solo sábado" : "Pendientes: fin de semana"}
+            {scope === "saturday" ? "Pendientes: sábado sin bus" : scope === "weekend-bus" ? "Pendientes: fin de semana con bus" : "Pendientes: fin de semana sin bus"}
           </button>)}
         </div>
       </div>}
       <div className="responses-table-wrap">
         <table className="responses-table wedding-import__table">
-          <thead><tr><th scope="col">Importar</th><th scope="col">Save the Date</th><th scope="col">Invitado principal</th><th scope="col">Acompañantes (uno por línea)</th><th scope="col">Teléfono</th><th scope="col">Eventos</th></tr></thead>
+          <thead><tr><th scope="col">Importar</th><th scope="col">Save the Date</th><th scope="col">Invitado principal</th><th scope="col">Acompañantes (uno por línea)</th><th scope="col">Teléfono</th><th scope="col">Tipo de invitación</th></tr></thead>
           <tbody>{rows.map((row) => {
             const disabled = busy || !row.selected;
             return <tr key={row.key}>
@@ -127,8 +128,8 @@ export function WeddingImport() {
               <td data-label="Invitado principal"><div className="admin-field"><input aria-label={`Invitado principal de ${row.original}`} value={row.name} required maxLength={150} disabled={disabled} onChange={(event) => update(row.key, { name: event.target.value })} /></div></td>
               <td data-label="Acompañantes"><div className="admin-field"><textarea aria-label={`Acompañantes de ${row.original}, uno por línea`} value={row.companionsText} rows={2} disabled={disabled} onChange={(event) => update(row.key, { companionsText: event.target.value })} /></div></td>
               <td data-label="Teléfono"><div className="admin-field"><input type="tel" aria-label={`Teléfono de ${row.original}`} value={row.phoneNumber} placeholder="Sin teléfono" pattern={"\\+\\d{8,15}"} disabled={disabled} onChange={(event) => update(row.key, { phoneNumber: event.target.value })} /></div></td>
-              <td data-label="Eventos"><div className="admin-field"><select aria-label={`Eventos de ${row.original}`} value={row.scope} required disabled={disabled} onChange={(event) => update(row.key, { scope: event.target.value as DraftRow["scope"] })}>
-                <option value="">Por asignar</option><option value="saturday">Solo sábado</option><option value="weekend">Fin de semana</option>
+              <td data-label="Tipo de invitación"><div className="admin-field"><select aria-label={`Tipo de invitación para ${row.original}`} value={row.scope} required disabled={disabled} onChange={(event) => update(row.key, { scope: event.target.value as DraftRow["scope"] })}>
+                <option value="">Por asignar</option><option value="saturday">Solo sábado · sin bus</option><option value="weekend-no-bus">Fin de semana · sin bus</option><option value="weekend-bus">Fin de semana · con bus</option>
               </select></div></td>
             </tr>;
           })}</tbody>

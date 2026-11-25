@@ -252,9 +252,31 @@ h1, h2, h3 { font-family: var(--font-display), serif; font-weight: 300; }
 .guest-guide__feedback .guest-guide__button::after { content: ""; flex: none; width: 6px; height: 6px; border: solid currentColor; border-width: 1px 1px 0 0; transform: rotate(45deg); }
 .wedding-guide-page h1 { margin: 12px 0 24px; color: var(--color-olive-dark); font-size: clamp(46px, 11vw, 72px); line-height: .9; }
 .wedding-guide-page__description { margin-top: var(--space-lg); }
+.wedding-guide-page--restaurants { min-height: auto; display: grid; justify-items: center; gap: var(--space-lg); padding: clamp(24px, 5vw, 64px) clamp(14px, 4vw, 56px); background: var(--color-olive-dark); }
+.restaurant-guide { position: relative; width: min(100%, 1040px); overflow: hidden; border: 1px solid color-mix(in srgb, var(--color-cream-light) 55%, transparent); background: linear-gradient(color-mix(in srgb, var(--color-cream-light) 91%, transparent), color-mix(in srgb, var(--color-cream-light) 91%, transparent)), url("/images/flower-green-texture.png") right bottom / min(48vw, 480px) auto no-repeat, url("/images/paper-texture.png") center / cover no-repeat, var(--color-cream-light); color: var(--color-ink); }
+.restaurant-guide__header { position: relative; min-height: 228px; display: grid; align-content: center; gap: var(--space-sm); overflow: hidden; padding: clamp(28px, 6vw, 64px); border-bottom: 1px solid var(--color-border); }
+.restaurant-guide__header h1 { position: relative; z-index: 1; max-width: 12ch; margin: 0; color: var(--color-olive-dark); font-size: clamp(54px, 9vw, 96px); line-height: .85; }
+.restaurant-guide__header > p:last-of-type { position: relative; z-index: 1; max-width: 40ch; margin-top: var(--space-sm); font-size: clamp(13px, 1.5vw, 16px); }
+.restaurant-guide__flower { position: absolute; top: 0; right: clamp(8px, 4vw, 48px); width: clamp(128px, 23vw, 248px); height: auto; opacity: .82; object-fit: contain; filter: brightness(0) saturate(100%) invert(42%) sepia(18%) saturate(779%) hue-rotate(36deg) brightness(88%) contrast(84%); }
+.restaurant-guide__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(24px, 6vw, 72px); row-gap: 0; margin: 0; padding: clamp(20px, 5vw, 52px) clamp(28px, 7vw, 76px) var(--space-xl); list-style: none; }
+.restaurant-guide__entry { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: var(--space-md); min-width: 0; padding: var(--space-lg) 0; border-top: 1px solid var(--color-border); }
+.restaurant-guide__entry:nth-child(4n + 2) { transform: translateY(24px); }
+.restaurant-guide__number { padding-top: 8px; color: var(--color-olive); font-size: 9px; letter-spacing: .12em; }
+.restaurant-guide__entry h2 { width: fit-content; max-width: 100%; color: var(--color-olive-dark); font-family: var(--font-script), cursive; font-size: clamp(27px, 3.1vw, 39px); font-weight: 400; line-height: 1; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.restaurant-guide__cuisine { margin-top: 6px; font-family: var(--font-display), serif; font-size: clamp(16px, 1.8vw, 21px); line-height: 1.2; }
+.restaurant-guide__location { margin-top: 8px; color: var(--color-muted); font-size: 11px; line-height: 1.5; }
+.restaurant-guide__entry a { display: inline-flex; align-items: center; min-height: 44px; margin-top: 3px; color: var(--color-olive-dark); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-decoration-thickness: 1px; text-underline-offset: 4px; text-transform: uppercase; }
+.restaurant-guide__note { margin: 0 clamp(28px, 7vw, 76px) clamp(28px, 5vw, 52px); padding-top: var(--space-md); border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 11px; }
 .wedding-faq details { border-bottom: 1px solid var(--color-border); }
 .wedding-faq summary { cursor: pointer; padding-block: var(--space-md); font-weight: 600; color: var(--color-olive-dark); }
 .wedding-faq p { padding-bottom: var(--space-md); white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 620px) {
+  .restaurant-guide__header { min-height: 205px; padding-right: 108px; }
+  .restaurant-guide__flower { top: 16px; right: -8px; width: 132px; opacity: .56; }
+  .restaurant-guide__list { grid-template-columns: minmax(0, 1fr); padding-inline: 24px; }
+  .restaurant-guide__entry:nth-child(4n + 2) { transform: none; }
+  .restaurant-guide__note { margin-inline: 24px; }
+}
 .rsvp-feedback__status { color: var(--color-cream-light); font-size: 12px; text-align: left; }
 .rsvp-feedback__status:not(:empty) { display: flex; align-items: baseline; gap: var(--space-sm); padding: 0 var(--space-sm) var(--space-sm); }
 .rsvp-feedback__status:not(:empty)::before { content: ""; flex: none; width: 9px; height: 5px; border: solid currentColor; border-width: 0 0 1px 1px; transform: translateY(-2px) rotate(-45deg); }

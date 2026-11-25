@@ -32,6 +32,7 @@ export function ManualInvitationGuestForm({ origin, phase = "save-the-date", sou
           prefix: formData.get("prefix"),
           phoneNumber: formData.get("phoneNumber"),
           saturdayOnly: isFinal ? formData.get("scope") === "saturday" : formData.get("saturdayOnly") === "on",
+          transportIncluded: isFinal ? formData.get("scope") === "weekend-bus" : true,
           sourceResponseId: source?.id,
           companions: isFinal ? formData.getAll("companionName") : undefined,
         }),
@@ -62,11 +63,11 @@ export function ManualInvitationGuestForm({ origin, phase = "save-the-date", sou
       <div className="admin-field"><label htmlFor="manual-guest-prefix">Prefijo <em>opcional</em></label><input id="manual-guest-prefix" name="prefix" inputMode="tel" maxLength={8} placeholder="+591" /></div>
       <div className="admin-field"><label htmlFor="manual-guest-phone">Teléfono <em>opcional</em></label><input id="manual-guest-phone" name="phoneNumber" inputMode="tel" maxLength={24} placeholder="70000000" /></div>
       {isFinal ? <div className="admin-field">
-        <label htmlFor="manual-guest-scope">Eventos incluidos</label>
-        <select id="manual-guest-scope" name="scope" defaultValue={source?.saturdayOnly == null ? "" : source.saturdayOnly ? "saturday" : "weekend"} required>
-          <option value="" disabled>Selecciona los eventos</option>
-          <option value="weekend">Fin de semana</option>
-          <option value="saturday">Solo sábado</option>
+        <label htmlFor="manual-guest-scope">Tipo de invitación</label>
+        <select id="manual-guest-scope" name="scope" defaultValue={source?.saturdayOnly ? "saturday" : "weekend-bus"} required>
+          <option value="weekend-bus">Fin de semana · con bus</option>
+          <option value="weekend-no-bus">Fin de semana · sin bus</option>
+          <option value="saturday">Solo sábado · sin bus</option>
         </select>
       </div> : <label className="manual-invitation-guest__toggle"><input name="saturdayOnly" type="checkbox" /><span>Solo invitado sábado</span></label>}
       {isFinal && <CompanionFields key={formVersion} />}

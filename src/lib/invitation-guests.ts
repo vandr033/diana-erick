@@ -33,7 +33,7 @@ export async function getSaveTheDateResponse(id: string) {
   return result ?? null;
 }
 
-export async function createManualInvitationGuest(input: { name: string; phoneNumber: string | null; saturdayOnly: boolean; phase: InvitationPhase; sourceResponseId?: string; sourceGuestId?: string | null; companions?: string[] }) {
+export async function createManualInvitationGuest(input: { name: string; phoneNumber: string | null; saturdayOnly: boolean; transportIncluded: boolean; phase: InvitationPhase; sourceResponseId?: string; sourceGuestId?: string | null; companions?: string[] }) {
   const [guest] = await db.insert(invitationGuests).values({
     ...input, id: newId(), token: newToken(),
   }).onConflictDoNothing().returning();
@@ -61,7 +61,7 @@ export async function markInvitationOpened(token: string) {
     .where(and(eq(invitationGuests.token, token), isNull(invitationGuests.invitationOpenedAt)));
 }
 
-export async function updateInvitationGuest(id: string, input: { name: string; phoneNumber: string | null; saturdayOnly: boolean; customMessage: string | null; companions?: string[] }, phase: InvitationPhase) {
+export async function updateInvitationGuest(id: string, input: { name: string; phoneNumber: string | null; saturdayOnly: boolean; transportIncluded: boolean; customMessage: string | null; companions?: string[] }, phase: InvitationPhase) {
   if (input.phoneNumber) {
     const existing = await db.select({ id: invitationGuests.id }).from(invitationGuests)
       .where(and(eq(invitationGuests.phoneNumber, input.phoneNumber), eq(invitationGuests.phase, phase), ne(invitationGuests.id, id))).limit(1);

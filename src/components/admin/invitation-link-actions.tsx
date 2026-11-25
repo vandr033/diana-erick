@@ -19,7 +19,7 @@ export function GeneralInvitationLinks({ origin, phase = "save-the-date" }: { or
   return <section className="admin-section invitation-links">
     <div className="admin-section-heading"><div><p className="admin-eyebrow">Enlaces públicos</p><h2>Obtener enlace</h2></div></div>
     <p className="admin-note">Estos enlaces no incluyen un nombre. Úsalos cuando quieras compartir la invitación abierta.</p>
-    <div className="invitation-links__actions"><CopyButton label="COPIAR FIN DE SEMANA" value={phase === "final" ? base : `${base}/`} /><CopyButton label="COPIAR SOLO SÁBADO" value={`${base}/sabado`} /></div>
+    <div className="invitation-links__actions">{phase === "final" ? <><CopyButton label="FIN DE SEMANA · CON BUS" value={base} /><CopyButton label="FIN DE SEMANA · SIN BUS" value={`${base}/sin-bus`} /><CopyButton label="SÁBADO · SIN BUS" value={`${base}/sabado`} /></> : <><CopyButton label="COPIAR FIN DE SEMANA" value={`${base}/`} /><CopyButton label="COPIAR SOLO SÁBADO" value={`${base}/sabado`} /></>}</div>
   </section>;
 }
 

@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     name: parsed.data.name,
     phoneNumber: prefix && phone ? `+${prefix}${phone}` : source?.phoneNumber ?? null,
     saturdayOnly: parsed.data.saturdayOnly,
+    transportIncluded: parsed.data.transportIncluded,
     phase,
     sourceResponseId,
     sourceGuestId: source?.sourceGuestId,

@@ -13,6 +13,7 @@ type RsvpFormSettings = Pick<SiteSettings, "attendancePromptLabel" | "commentLab
 
 const guideIcons: Record<GuidePage, string> = {
   vestimenta: "M12 7V6a2 2 0 1 0-2-2m2 3L3 13a2 2 0 0 0 1 4h16a2 2 0 0 0 1-4l-9-6Z",
+  restaurantes: "M7 3v7m4-7v7M9 3v18m8-18v18m0-18c3 3 3 8 0 10",
   actividades: "M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z M15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
   regalos: "M3 8h18v4H3z M5 12v9h14v-9 M12 21V8 M12 8H8a2.5 2.5 0 1 1 2.4-3.2L12 8Zm0 0h4a2.5 2.5 0 1 0-2.4-3.2L12 8Z",
   faq: "M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l1.5-4A8.5 8.5 0 1 1 21 11.5Z M10 9a2.5 2.5 0 1 1 4 2l-1.5 1v1 M12.5 16h.01",
@@ -37,7 +38,7 @@ const personAttendanceLabels = { yes: "Va", no: "No va" };
 const groupAttendanceLabels = { yes: "Todos vamos", no: "Nadie va", some: "Algunos" };
 type PersonDraft = Omit<PersonRsvp, "attendance"> & { attendance: PersonRsvp["attendance"] | "" };
 
-const needsTransportAnswer = (person: PersonDraft) => person.attendance === "yes" && !person.transport;
+const needsTransportAnswer = (person: PersonDraft, transportIncluded: boolean) => transportIncluded && person.attendance === "yes" && !person.transport;
 
 function groupAnswer(answers: (PersonDraft["attendance"] | undefined)[]) {
   const [first] = answers;
@@ -83,7 +84,7 @@ function toConfirmation(values: FormValues): RsvpConfirmation {
   };
 }
 
-function DayAttendance({ event, names, people, open, onToggle, incomplete, onChange }: {
+function DayAttendance({ event, names, people, open, onToggle, incomplete, onChange, transportIncluded }: {
   event: Event;
   names: string[];
   people: PersonDraft[];
@@ -91,12 +92,13 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   onToggle: () => void;
   incomplete: boolean;
   onChange: (people: PersonDraft[]) => void;
+  transportIncluded: boolean;
 }) {
   const [customAttendance, setCustomAttendance] = useState(false);
   const panelId = `rsvp-${event.slug}`;
   const buttonId = `${panelId}-toggle`;
   const pending = people.some((person) => !person.attendance);
-  const transportPending = people.some(needsTransportAnswer);
+  const transportPending = people.some((person) => needsTransportAnswer(person, transportIncluded));
   const attendees = people.filter((person) => person.attendance === "yes");
   const attending = attendees.length;
   const transportAnswer = groupAnswer(attendees.map((person) => person.transport));
@@ -143,7 +145,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
             labels={personAttendanceLabels} choices={["yes", "no"]} />
         </div>;
       })}
-      <div className="rsvp-transport" role="group" aria-labelledby={`${panelId}-transport-title`}>
+      {transportIncluded && <div className="rsvp-transport" role="group" aria-labelledby={`${panelId}-transport-title`}>
         <div className="rsvp-transport__heading">
           <h4 id={`${panelId}-transport-title`}>{hasGroup ? "¿Van a necesitar transporte?" : "¿Vas a necesitar transporte?"}</h4>
           <Link id={`transporte-${event.slug}`} href={`?transporte=${event.slug}`} prefetch={false}
@@ -162,7 +164,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
             onChange={answerTransport} labels={transportLabels} choices={["yes", "no"]} />
         </div>}
         {incomplete && !pending && transportPending && <p className="field-error rsvp-day__error" role="alert">Responde Sí o No para el transporte.</p>}
-      </div>
+      </div>}
       <details className="rsvp-comments">
         <summary>{hasComments ? "Editar comentarios" : "Agregar comentarios (opcional)"}</summary>
         <div className="rsvp-comments__fields">
@@ -179,7 +181,7 @@ function DayAttendance({ event, names, people, open, onToggle, incomplete, onCha
   </div>;
 }
 
-export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, companions = [], savedConfirmation, canEdit = true, countdownEvent }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean; countdownEvent?: Event }) {
+export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFullName = "", invitationToken, phase, transportIncluded = true, companions = [], savedConfirmation, canEdit = true, countdownEvent }: { settings: RsvpFormSettings; events: Event[]; endpoint?: string; initialFullName?: string; invitationToken?: string; phase?: InvitationPhase; transportIncluded?: boolean; companions?: string[]; savedConfirmation?: RsvpConfirmation; canEdit?: boolean; countdownEvent?: Event }) {
   const isFinal = phase === "final";
   const days = rsvpDays.flatMap(({ slug, field }) => {
     const event = events.find((item) => item.slug === slug);
@@ -249,7 +251,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
     setErrors({});
     setStatus(null);
     setIncompleteDay(undefined);
-    const unansweredDay = isFinal && days.find(({ field }) => attendanceByDay[field]?.some((person) => !person.attendance || needsTransportAnswer(person)));
+    const unansweredDay = isFinal && days.find(({ field }) => attendanceByDay[field]?.some((person) => !person.attendance || needsTransportAnswer(person, transportIncluded)));
     if (unansweredDay) {
       setOpenDay(unansweredDay.field);
       setIncompleteDay(unansweredDay.field);
@@ -266,9 +268,12 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
           honeypot: "",
           invitationToken,
           phase,
+          transportIncluded,
           editReceipt: editingConfirmation ? confirmation?.editReceipt : undefined,
           companions: isFinal && companions.length ? companions : undefined,
-          attendanceByDay: isFinal ? attendanceByDay : undefined,
+          attendanceByDay: isFinal ? (transportIncluded
+            ? attendanceByDay
+            : Object.fromEntries(Object.entries(attendanceByDay).map(([day, people]) => [day, people?.map((person) => ({ ...person, transport: undefined }))]))) : undefined,
         }),
       });
       const payload = await response.json() as { confirmation?: RsvpConfirmation; errors?: Record<string, string>; message?: string };
@@ -300,7 +305,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
           {days.map(({ event, field }) => {
             const people = confirmation.party?.attendanceByDay?.[field];
             return <div key={event.id}><dt>{event.title}</dt><dd>{people
-              ? <ul>{people.map((person, index) => <li key={index}>{confirmedNames[index]} · {personAttendanceLabels[person.attendance]}{person.transport && <> · Transporte {transportLabels[person.transport]}</>}{person.comment && <p>{person.comment}</p>}</li>)}</ul>
+              ? <ul>{people.map((person, index) => <li key={index}>{confirmedNames[index]} · {personAttendanceLabels[person.attendance]}{transportIncluded && person.transport && <> · Transporte {transportLabels[person.transport]}</>}{person.comment && <p>{person.comment}</p>}</li>)}</ul>
               : attendanceLabels[confirmation[field]]}</dd></div>;
           })}
           {confirmation.comment && <div><dt>Comentario</dt><dd>{confirmation.comment}</dd></div>}
@@ -320,7 +325,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
         {errors.fullName && <p id="fullName-error" className="field-error">{errors.fullName}</p>}
       </div>}
       {isFinal ? <div className="rsvp-days">
-        {days.map(({ event, field }) => <DayAttendance key={event.id} event={event} names={names} people={attendanceByDay[field] ?? []}
+        {days.map(({ event, field }) => <DayAttendance key={event.id} event={event} names={names} people={attendanceByDay[field] ?? []} transportIncluded={transportIncluded}
           open={openDay === field} onToggle={() => setOpenDay((current) => current === field ? undefined : field)}
           incomplete={incompleteDay === field}
           onChange={(people) => setAttendanceByDay((current) => ({ ...current, [field]: people }))} />)}
@@ -347,7 +352,7 @@ export function RsvpForm({ settings, events, endpoint = "/api/rsvp", initialFull
       </div> : <button className="button button--olive form-submit" type="submit" disabled={isSending}>{isSending ? "ENVIANDO…" : settings.submitButtonLabel}</button>}
     </form>
   );
-  const invitationPath = invitationToken ? `/boda/${encodeURIComponent(invitationToken)}` : endpoint.endsWith("/sabado") ? "/boda/sabado" : "/boda";
+  const invitationPath = invitationToken ? `/boda/${encodeURIComponent(invitationToken)}` : endpoint.endsWith("/sabado") ? "/boda/sabado" : isFinal && !transportIncluded ? "/boda/sin-bus" : "/boda";
 
   return <>
     <section id="confirmar" className="rsvp-section" aria-labelledby="rsvp-title">

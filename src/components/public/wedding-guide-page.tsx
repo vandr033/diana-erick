@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { getWeddingFaq } from "@/src/db/queries";
 import { guestGuidePages, type GuidePage } from "@/src/lib/wedding-guide";
+import { RestaurantGuide } from "./restaurant-guide";
 
 export async function WeddingGuidePage({ page, invitationPath }: { page: GuidePage; invitationPath: string }) {
+  if (page === "restaurantes") return <RestaurantGuide invitationPath={invitationPath} />;
   const { title, description } = guestGuidePages[page];
   const entries = page === "faq" ? (await getWeddingFaq()).filter((entry) => entry.published) : [];
 
